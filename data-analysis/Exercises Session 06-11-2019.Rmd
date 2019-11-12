@@ -1,0 +1,169 @@
+---
+title: "Exercises Session 06-11-2019"
+output:
+  word_document: default
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise Session 06-11-2019
+
+#Group: Santiago Blanco Sanchez, Lais Silva Almeida Zanchetta, Daniel Ferreira Zanchetta
+
+## Exercises Block I
+
+### 1)
+```{r}
+vector<-c(1:20)
+vectorWithPos2 <- vector[2]
+vector[2]<-vector[20]
+vector[20]<-vectorWithPos2
+vector
+```
+
+### 2)
+Step 1: Create the vector
+```{r}
+a <- rep(c(1,2,3,NA),5)
+```
+Step 2: Find out the mean, without considering the NA value
+```{r}
+mean <- mean(a,na.rm=TRUE)
+```
+Step 3: Create one recursive function that will be used later onto sapply
+```{r}
+fun <- function(x){ if(is.na(x)){x<-mean} else{x<-x}}
+```
+Step 4: Assign the sapply function to the vector at step 1
+```{r}
+a<-sapply(a, fun)
+a
+```
+
+### 3)
+First, create 3 vectors and, then, apply the data.frame function.
+```{r}
+Age <- c(22,25,18,20)
+Name <- c("James","Mathew","Olivia","Stella")
+Gender <- c("M","M","F","F")
+df <- data.frame(Age,Name,Gender)
+df
+```
+
+### 4)
+```{r}
+df[Age>21,]
+```
+
+### 5)
+```{r}
+df["adult"]<-c(df$Age>21)
+df
+```
+
+### 6)
+Instructions to write the iris.csv file and read it:
+```{r}
+data("iris")
+write.table(iris,file="iris.csv",row.names=FALSE, col.names=TRUE,sep=";")
+irisdf <- read.table("iris.csv",header=TRUE,sep=";")
+```
+Second set of instruction to calculate by rows and columns
+```{r}
+iris_subset <- unlist(lapply(irisdf, is.numeric))
+```
+```{r}
+#Using apply
+apply(irisdf[,iris_subset], 1, mean)
+apply(irisdf[,iris_subset], 2, mean)
+```
+```{r}
+#Using colMeans and rowMeans
+colMeans(irisdf[ , iris_subset])
+rowMeans(irisdf[ ,iris_subset])
+```
+
+### 7)
+This function should consist of the following steps:
+1)Define a subset of the iris dataframe, to contain only numeric values. Otherwise, it wont be possible to apply the rowMeans and colMeans functions (both expect numeric dataframe/matrix/vector/list)
+2)Calculate the Row Means
+3)Calculate the Column Means
+4) Return both values
+```{r}
+funMean <- function(dataset){
+  subsetDataSetNumeric <- unlist(sapply(dataset,is.numeric))
+  print(rowMeans(dataset[,subsetDataSetNumeric]))
+  print(colMeans(dataset[,subsetDataSetNumeric]))
+}
+funMean(irisdf)
+```
+
+### 8)
+```{r}
+funFibonacci <- function(n){
+  x <- numeric(n)
+  n1 <- -1
+  n2 <- 1
+  for(i in 1:length(x)){
+   x[i] <- n1 + n2
+   n1 <- n2
+   n2 <- x[i]
+  }
+  x
+}
+funFibonacci(10)
+```
+
+### 9)
+Firstly reading the dataset
+```{r}
+precipitaciones <- read.table("C:/Users/Daniel/Documents/precipitacionsbarcelonadesde1786.csv", header=TRUE, sep=",")
+View(precipitaciones)
+```
+Secondly, some of the functions seen have been applied to the dataset
+```{r}
+colSums(precipitaciones,na.rm=TRUE)
+rowSums(precipitaciones[,2:13],na.rm=TRUE)
+colMeans(precipitaciones, na.rm=TRUE)
+rowMeans(precipitaciones[,2:13],na.rm=TRUE)
+```
+Finally, exploring the plots
+```{r}
+y <- rowMeans(precipitaciones[,2:13],na.rm=TRUE)
+x <- precipitaciones[1]
+dataToPlot <- data.frame(x,y)
+plot(dataToPlot,type="p",xlab="Year",ylab="Average")
+hist(precipitaciones$Precip_Acum_Novembre, col="blue")
+```
+
+## Exercises Block II
+
+###1)
+```{r}
+choices<-read.table("C:\\Users\\Daniel\\Documents\\Certificados & Faculdade\\UPC Master Big Data\\Data Analytics\\Choices.csv", header=TRUE, sep =";")
+View(choices)
+str(choices) #Code to show the class of all variables
+```
+
+###2)
+```{r}
+choices_conting<-table(choices$INFO,choices$MEASURE) #creation of the contingency table
+choices_conting
+```
+
+###3)
+```{r}
+conTableWithSums<-data.frame(addmargins(choices_conting))
+conTableWithSums
+```
+
+###4)
+```{r}
+chisq.test(choices_conting)
+```
+Reply: In this scenario, given the p-value less than the 0.05 level, we can undertand that Measure and Info are dependent variables.
