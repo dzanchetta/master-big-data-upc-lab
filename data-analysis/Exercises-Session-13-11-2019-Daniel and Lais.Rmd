@@ -1,0 +1,23 @@
+---
+title: "Exercises 13-11-2019 - Daniel and Lais"
+author: "Daniel Zanchetta and Lais Zanchetta"
+date: "13/11/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercises Session 2 - 13/11/2019
+
+## Group: Lais Silva Almeida Zanchetta and Daniel Ferreira Zanchetta
+
+### 1)
+x <- c(7.80, 12.60, 15.96, 12.75, 13.50)
+mean(x)
+median(x)
+sd(x)
+
+summary(x)
+Q1 <- summary(x)[2]
