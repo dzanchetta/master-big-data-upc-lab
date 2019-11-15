@@ -21,3 +21,26 @@ sd(x)
 
 summary(x)
 Q1 <- summary(x)[2]
+Q3 <- summary(x)[5]
+IQR <- Q3 - Q1
+IQR
+
+boxplot(x)
+
+### 2)
+Cuando una muestra es escogida al azar (a.k.a de manera aleatoria), hay una mayor probabilidad que la variabilidad de los datos tengan un resultado más proximo de la realidad, puesse garantiza que esta muestra esté sesgada, es decir, que representarían la realidad de la población.
+Por ejemplo, si al realizar una analisis descriptiva de la renta de una población, una muestra al azar trae datos aleatorios dentro de esta población, mientras que una muestra de expertos puede estar dirigida a, quizás, un grupo selecto que sea más rico/pobre.
+
+### 3)
+Factores Sistematicos:
+-Condiciones del trafico, por ejemplo, km de trafico que hay en el trayecto de mi casa al trabajo
+
+Factores Aleatorios:
+-Condiciones climaticas como, por ejemplo, lluvia, nieve, etc.
+-Conductor del trasporte publico tuvo algun imprevisto
+-Accidentes con el transporte publico que utilizo o en la carretera
+-Huelgas con operadores de trafico
+
+### 4)
+Cuando se tiene com resultado una distribuición normal (N(0,1)).
+
