@@ -60,7 +60,7 @@ Para realizar las operaciones de eliminar duplicados, hemos eligido instalar el 
 library("dplyr")
 bcnduplicados<-duplicated(bcnpisos)
 bcnpisos_sin_dupl<-distinct(bcnpisos)
-bcnpisos_sin_dupl
+#bcnpisos_sin_dupl--> por motivos de organización del documento de entrega, hemos eligido no imprimir los registros debido a grande cantidad de filas.
 ```
 
 ### 6
