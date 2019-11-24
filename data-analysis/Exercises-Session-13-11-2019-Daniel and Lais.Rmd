@@ -14,6 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Group: Lais Silva Almeida Zanchetta and Daniel Ferreira Zanchetta
 
 ### 1)
+```{r}
 x <- c(7.80, 12.60, 15.96, 12.75, 13.50)
 mean(x)
 median(x)
@@ -21,3 +22,157 @@ sd(x)
 
 summary(x)
 Q1 <- summary(x)[2]
+Q3 <- summary(x)[5]
+IQR <- Q3 - Q1
+IQR
+
+boxplot(x)
+```
+
+### 2)
+Cuando una muestra es escogida al azar (a.k.a de manera aleatoria), hay una mayor probabilidad que la variabilidad de los datos tengan un resultado más proximo de la realidad, puesse garantiza que esta muestra esté sesgada, es decir, que representarían la realidad de la población.
+Por ejemplo, si al realizar una analisis descriptiva de la renta de una población, una muestra al azar trae datos aleatorios dentro de esta población, mientras que una muestra de expertos puede estar dirigida a, quizás, un grupo selecto que sea más rico/pobre.
+
+### 3)
+Factores Sistematicos:
+-Condiciones del trafico, por ejemplo, km de trafico que hay en el trayecto de mi casa al trabajo
+
+Factores Aleatorios:
+-Condiciones climaticas como, por ejemplo, lluvia, nieve, etc.
+-Conductor del trasporte publico tuvo algun imprevisto
+-Accidentes con el transporte publico que utilizo o en la carretera
+-Huelgas con operadores de trafico
+
+### 4)
+Cuando se tiene como resultado una distribuición normal (N(0,1)).
+
+### 5)
+```{r}
+bcnpisos <- read.table("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 2 - 13-11/exer_Descr/bcn_pisos.txt", header=TRUE)
+View(bcnpisos)
+```
+Despues de leer el archivo, hacer el summary de las variables:
+```{r}
+summary(bcnpisos)
+```
+Para realizar las operaciones de eliminar duplicados, hemos eligido instalar el paquete dplyr, para hacer uso de la función distinct:
+```{r}
+library("dplyr")
+bcnduplicados<-duplicated(bcnpisos)
+bcnpisos_sin_dupl<-distinct(bcnpisos)
+#bcnpisos_sin_dupl--> por motivos de organización del documento de entrega, hemos eligido no imprimir los registros debido a grande cantidad de filas.
+```
+
+### 6
+Primero, para descobrir la class de cada variable:
+```{r}
+sapply(bcnpisos_sin_dupl, class)
+```
+Valor:
+```{r}
+hist(bcnpisos_sin_dupl$Valor)
+```
+Superf:
+```{r}
+plot(bcnpisos_sin_dupl$Superf)
+hist(bcnpisos_sin_dupl$Superf)
+```
+Dorm:
+```{r}
+hist(bcnpisos_sin_dupl$Dorm)
+```
+Banys:
+```{r}
+hist(bcnpisos_sin_dupl$Banys)
+```
+Edat:
+```{r}
+hist(bcnpisos_sin_dupl$Edat)
+```
+Estat:
+```{r}
+barplot(table(bcnpisos_sin_dupl$Estat))
+```
+Planta:
+```{r}
+barplot(table(bcnpisos_sin_dupl$Planta))
+```
+Dist:
+```{r}
+barplot(table(bcnpisos_sin_dupl$Dist))
+```
+ValSol:
+```{r}
+hist(bcnpisos_sin_dupl$ValSol)
+```
+Tipus:
+```{r}
+barplot(table(bcnpisos_sin_dupl$Tipus))
+```
+Ascens:
+```{r}
+barplot(table(bcnpisos_sin_dupl$Ascens))
+```
+ExtInt:
+```{r}
+barplot(table(bcnpisos_sin_dupl$ExtInt))
+```
+Reforma:
+```{r}
+barplot(table(bcnpisos_sin_dupl$Reforma))
+```
+
+### 7)
+Superf:
+```{r}
+superf<-summary(bcnpisos_sin_dupl$Superf)
+Q1Superf <- superf[2]
+Q3Superf<-superf[5]
+IQRSuperf <- Q3Superf - Q1Superf
+IQRSuperf
+boxplot(bcnpisos_sin_dupl$Superf)
+Q1Superf - 3*IQRSuperf
+Q3Superf + 3*IQRSuperf
+#Superficies que son potenciales outliers
+bcnpisos_sin_dupl$Superf[which(bcnpisos_sin_dupl$Superf > Q3Superf + 3*IQRSuperf)]
+bcnpisos_sin_dupl$Superf[which(bcnpisos_sin_dupl$Superf < Q1Superf - 3*IQRSuperf)]
+```
+ValSol:
+```{r}
+valsol<-summary(bcnpisos_sin_dupl$ValSol)
+Q1valsol <- valsol[2]
+Q3valsol<-valsol[5]
+IQRvalsol <- Q3valsol - Q1valsol
+IQRvalsol
+boxplot(bcnpisos_sin_dupl$ValSol)
+Q1valsol - 3*IQRvalsol
+Q3valsol + 3*IQRvalsol
+#ValSol que son potenciales outliers
+bcnpisos_sin_dupl$ValSol[which(bcnpisos_sin_dupl$ValSol > Q3Superf + 3*IQRSuperf)]
+bcnpisos_sin_dupl$ValSol[which(bcnpisos_sin_dupl$ValSol < Q1Superf - 3*IQRSuperf)]
+```
+### 8)
+```{r}
+plot(bcnpisos_sin_dupl$Valor,bcnpisos_sin_dupl$Superf,main="Pisos BCN", sub = "Valor y Superficie", xlab="Superficie", ylab="Valor")
+```
+If covariance is positive it means that the cloud of points is located mainly in the 1st and 3rd quadrant, thus the association is positive.
+If it is negative means that points are located mainly in the 2nd and 4th quadrant, so the association is negative.
+```{r}
+cov(bcnpisos_sin_dupl$Valor,bcnpisos_sin_dupl$Superf)
+```
+Correlación entre valor y superficie
+```{r}
+cor(bcnpisos_sin_dupl$Valor,bcnpisos_sin_dupl$Superf)
+```
+### 9)
+```{r}
+oneway.test(bcnpisos_sin_dupl$Valor~bcnpisos_sin_dupl$Dist,var.equal=T)
+```
+Aproximación del chi cuadrado és un valor muy pequeño (p-value < 2.2e-16) por lo tanto los valores son dependientes
+
+### 10)
+```{r}
+tb_dist_est <- table(bcnpisos_sin_dupl$Dist,bcnpisos_sin_dupl$Estat)
+chisq.test(tb_dist_est)
+```
+Aproximación del chi cuadrado és un valor muy pequeño (p-value < 2.2e-16) por lo tanto los valores son dependientes

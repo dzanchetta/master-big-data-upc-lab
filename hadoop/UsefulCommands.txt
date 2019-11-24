@@ -1,0 +1,13 @@
+#Change the path level to address straight to the hadoop-2.7.4/bin and hadoop-2.7.4/sbin directories:
+
+nano .profile
+export PATH="$PATH:/home/bdma13/hadoop-2.7.4/bin:/home/bdma13/hadoop-2.7.4/sbin"
+
+#Copy the content of the NameNode (master) to the DataNode (slave1 and slave2)
+scp -r hadoop-2.7.4 jdk1.8.0_144 bdma13@slave1:.
+
+#To balance the blocks into the datanodes when one more datanode is added (scale up)
+
+hadoop-2.7.4/bin/hdfs balancer -threshold 1
+
+
