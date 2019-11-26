@@ -113,14 +113,54 @@ print(modelSVM)
 ```
 ## The best C to train the model is C = 0.5.
 
+##################################################################################################################################################################################################################################################################################################################
+
 ## Block II
 ```{r}
-irislm <- lm(as.numeric(Species)~Sepal.Length + Sepal.Width,data = iris)
+#linear model using lm() function
+irisTwoVariables <- iris[,c("Sepal.Length","Sepal.Width")]
+irislm <- lm(Sepal.Length~Sepal.Width, data = iris)
+irislm
+summary(irislm)
+```
+
+```{r}
+#Libraries
 library("caret")
 library("parallel")
 
-kfolds <- createFolds(c(iris$Species,iris$Sepal.Length,iris$Sepal.Width), k=10)
-tC <- trainControl(method="cv",number = 10,allowParallel = TRUE)
+#K Fold Cross Validation
 
-model<-train(Sepal.Length~., data = iris, method = "svmLinear",trControl = tC,tuneGrid = expand.grid(C=c(0.1,0.25,0.5,0.75,1)))
+#Decoupling the k folds number
+kNumber<-10
+method <- "lm"
 
+kfolds <- createFolds(iris$Sepal.Length, k=kNumber)
+tC <- trainControl(method="cv",number = kNumber,allowParallel = TRUE)
+
+modelKCV<-function(irisTwoVariables,kfolds,tC,method,seq){
+  #prepare a test data K-1 other folds
+  irisWithoutKFolds <- irisTwoVariables[-kfolds[[seq]],]
+  modelLM<-train(Sepal.Length~., data = irisWithoutKFolds, method = method,trControl = tC)
+  modelLM$results$Rsquared
+}
+
+#This method is not parallelized, and aims to store in a vector with kNumber positions the Rsquared for each train execution
+RsquaredNotParal <- sapply(1:kNumber,FUN=function(seq){
+modelKCV(irisTwoVariables,kfolds,tC,method,seq)
+})
+
+#Return the average of the accuracy obtained (accuracy = linear model Rsquared obtained)
+mean(RsquaredNotParal)
+
+#Preparing the parameters for the parallelized apply: detect cores and cluster export (to make available in the workspace)
+cl <- makeCluster(detectCores())
+clusterExport(cl=cl,varlist=list("irisTwoVariables","kfolds","tC","method","seq","modelKCV","train"))
+
+#Now, this method is parallelized, and aims to store in a vector with kNumber positions the Rsquared for each train execution
+RsquaredParal<-parSapply(cl,1:kNumber,FUN=function(seq){
+modelKCV(irisTwoVariables,kfolds,tC,method,seq)
+})
+
+mean(RsquaredParal)
+```
