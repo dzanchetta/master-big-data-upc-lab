@@ -87,13 +87,13 @@ wines <- read.table(file.choose(),sep = ",") #import file
 
 #A) Column names
 ```{r}
-names(wines)=c("id","Alcohol","Malic acid","Ash","Alcalinity of ash","Magnesium","Total phenols","Flavanoids","Nonflavanoid phenols","Proanthocyanins","Color intensity","Hue","OD280/OD315 of diluted wines","Proline")
+names(wines)=c("label","Alcohol","Malic acid","Ash","Alcalinity of ash","Magnesium","Total phenols","Flavanoids","Nonflavanoid phenols","Proanthocyanins","Color intensity","Hue","OD280/OD315 of diluted wines","Proline")
 wines
 ```
 
 #B) Force the label (first column) to be a factor
 ```{r}
-wines$Alcohol <- as.factor(wines$Alcohol)
+wines$label <- as.factor(wines$label)
 ```
 
 #C) For train control, use 10-fold Cross Validation protocol
@@ -107,17 +107,24 @@ tC <- trainControl(method="cv", number=10)
 ```{r}
 install.packages("e1071")
 library("e1071")
-pG <- expand.grid(C = c(0.1,0.25,0.5,0.75,1))
-modelSVM <-train(Alcohol~., data = wines, method = "svmLinear", trControl = tC, tuneGrid=pG)
+pG <- expand.grid(C = c(0.01,0.05,0.1,0.25,0.5,0.75,1))
+modelSVM <-train(label~., data = wines, method = "svmLinear", trControl = tC, tuneGrid=pG)
 print(modelSVM)
 ```
 ## The best C to train the model is C = 0.5.
 
 ## Block II
 ```{r}
+data("iris")
+write.table(iris,file="iris.csv",row.names=FALSE, col.names=TRUE,sep=";")
+irisdf <- read.table("iris.csv",header=TRUE,sep=";")
 irislm <- lm(as.numeric(Species)~Sepal.Length + Sepal.Width,data = iris)
 library("caret")
 library("parallel")
+
+
+
+
 
 kfolds <- createFolds(c(iris$Species,iris$Sepal.Length,iris$Sepal.Width), k=10)
 tC <- trainControl(method="cv",number = 10,allowParallel = TRUE)
