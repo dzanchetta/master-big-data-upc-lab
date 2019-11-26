@@ -1,4 +1,11 @@
 ---
+title: "Introduction to R (II) - Exercises 20-11-2019"
+author: "Daniel Zanchetta and Lais Zanchetta"
+date: "26/11/2019"
+output: word_document
+---
+
+---
 title: "R Notebook"
 output:
   word_document: default
@@ -7,63 +14,61 @@ output:
 
 # Lais Silva Almeida Zanchetta and Daniel Ferreira Zanchetta
 
-### Exercise 1
+# Exercise 1
 
 ```{r}
 x <- rnorm(n=1000,mean=5,sd=4)
 ```
-# with sort
+## with sort
 ```{r}
 xsrt <- sort(x,decreasing=TRUE)
 xbig <- c(xsrt[1:5])
 xbig
 ```
-# SORT - Min and Max
+## SORT - Min and Max
 ```{r}
 min(xsrt,na.rm = TRUE)
 max(xsrt,na.rm = TRUE)
 ```
-# with order
+## with order
 ```{r}
 x2<-x[order(-x)[1:5]] #the order indexed will get the 5 first values in descending order
 ```
-# ORDER - Min and Max
+## ORDER - Min and Max
 ```{r}
 min(x2,na.rm = TRUE)
 max(x2,na.rm = TRUE)
 ```
-## Are the results repeatable between runs? How would you make the run repeatable?
-# With the sort it is but with the order no. ????
+### Are the results repeatable between runs? How would you make the run repeatable?
+R.: No, they are not repeatable. They can be repeatable if the function is normalized (N(0,1))
 
-
-### Exercise 2
+# Exercise 2
 ```{r}
 A <- sample(1:10000, 1000, replace=FALSE)
 B <- sample(1:10000, 1000, replace=FALSE)
 ```
-# A Union B
+## A Union B
 ```{r}
 U <- union(A,B)
 length(U)
 ```
-# A intersection B
+## A intersection B
 ```{r}
 I <- intersect(A,B)
 length(I)
 ```
-# A diferents of B
+## A diferents of B
 ```{r}
 D <- setdiff(A,B)
 length(D)
 ```
 
-### Exercise 3
+# Exercise 3
 ```{r}
-bcnpisos <- read.table(file.choose(), header=TRUE) #to read files in mac chosing the file you want from the fold
-View(bcnpisos)
+bcnpisos <- read.table("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 2 - 13-11/exer_Descr/bcn_pisos.txt", header=TRUE)
 ```
 
-# A) As the parameters to determine the intervals were not informed, we assume for the exercise the interquartile range
+## A) As the parameters to determine the intervals were not informed, we assume for the exercise the interquartile range
 ```{r}
 Q1 <- summary(bcnpisos$Superf)[2]
 Q3 <- summary(bcnpisos$Superf)[4]
@@ -72,46 +77,44 @@ Superf <- cut(bcnpisos$Superf,c(0,Q1,IQR,Q3), labels= c("Peque","Grande","MuyGra
 table(Superf)  
 ```
 
-# B) 
+## B) 
 ```{r}
-install.packages("dummies")
+#install.packages("dummies")
 library("dummies")
 DistDum <- dummy(bcnpisos$Dist)
-DistDum
 ```
 
-### Exercise 4
+# Exercise 4
 ```{r}
-wines <- read.table(file.choose(),sep = ",") #import file 
+wines <- read.table("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 3 - 20-11/wine.data",sep = ",") #import file 
 ```
 
-#A) Column names
+## A) Column names
 ```{r}
 names(wines)=c("label","Alcohol","Malic acid","Ash","Alcalinity of ash","Magnesium","Total phenols","Flavanoids","Nonflavanoid phenols","Proanthocyanins","Color intensity","Hue","OD280/OD315 of diluted wines","Proline")
-wines
 ```
 
-#B) Force the label (first column) to be a factor
+## B) Force the label (first column) to be a factor
 ```{r}
 wines$label <- as.factor(wines$label)
 ```
 
-#C) For train control, use 10-fold Cross Validation protocol
+## C) For train control, use 10-fold Cross Validation protocol
 ```{r}
-install.packages("caret")
+#install.packages("caret")
 library("caret")
 tC <- trainControl(method="cv", number=10)
 ```
 
-#D) Try the same model we used during the class (linear svm).Try different values for the cost parameters and print the resulting model. What is the best C?
+## D) Try the same model we used during the class (linear svm).Try different values for the cost parameters and print the resulting model. What is the best C?
 ```{r}
-install.packages("e1071")
+#install.packages("e1071")
 library("e1071")
 pG <- expand.grid(C = c(0.01,0.05,0.1,0.25,0.5,0.75,1))
 modelSVM <-train(label~., data = wines, method = "svmLinear", trControl = tC, tuneGrid=pG)
 print(modelSVM)
 ```
-## The best C to train the model is C = 0.5.
+### R.: The best C to train the model is C = 0.5.
 
 ##################################################################################################################################################################################################################################################################################################################
 
