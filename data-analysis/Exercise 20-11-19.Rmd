@@ -119,7 +119,7 @@ print(modelSVM)
 ```{r}
 #linear model using lm() function
 irisTwoVariables <- iris[,c("Sepal.Length","Sepal.Width")]
-irislm <- lm(Sepal.Length~Sepal.Width, data = iris)
+irislm <- lm(Sepal.Length~Sepal.Width, data = irisTwoVariables)
 irislm
 summary(irislm)
 ```
