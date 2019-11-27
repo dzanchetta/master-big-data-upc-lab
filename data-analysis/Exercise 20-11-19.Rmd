@@ -118,16 +118,3 @@ print(modelSVM)
 data("iris")
 write.table(iris,file="iris.csv",row.names=FALSE, col.names=TRUE,sep=";")
 irisdf <- read.table("iris.csv",header=TRUE,sep=";")
-irislm <- lm(as.numeric(Species)~Sepal.Length + Sepal.Width,data = iris)
-library("caret")
-library("parallel")
-
-
-
-
-
-kfolds <- createFolds(c(iris$Species,iris$Sepal.Length,iris$Sepal.Width), k=10)
-tC <- trainControl(method="cv",number = 10,allowParallel = TRUE)
-
-model<-train(Sepal.Length~., data = iris, method = "svmLinear",trControl = tC,tuneGrid = expand.grid(C=c(0.1,0.25,0.5,0.75,1)))
-
