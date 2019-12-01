@@ -1,0 +1,21 @@
+---
+title: "Exercise 27-11"
+author: "Lais Silva Almeida Zanchetta, Daniel Ferreira Zanchetta"
+date: "11/27/2019"
+output: word_document
+---
+
+## 1)	Enumere cuales son los elementos clave de una prueba de hipótesis y su significado.
+ Resp.: Los elementos claves de una prueba de hipótesis son,
+        - Null hypothesis: la hipótesis nula és la hipótesis contraria a que nos gustaría probar (alternative hypothesis).
+        - Alternative hypothesis: la hipótesis alternativa és una variación de la hipotésis nula que se desea validar.
+        - Test Statistic: es un valor estadístico adecuado para comparar la hipótesis nula con la hipótesis alternativa (variable aleatória)
+        - Reference distribution: prueba estadística de la hipótesis nula, si la hipótesis nula és verdadera
+        - p_value: Probabilidad estadística de la prueba observada. Si el p_value es muy bajo la hipótesis nula és rechazada (in theory, p_value < 0,05)
+
+## 2)	Un elemento clave en toda prueba de hipótesis es la distribución de referencia del estadístico de la prueba. Diga de que maneras podemos conocer (o aproximar) la distribución de referencia para la prueba de hipótesis de querer ver si una media de una muestra es igual o no a un cierto valor nominal. Especifique como obtendría o cual sería esta distribución de referencia.
+
+########## ANSWER
+
+## 3) Un amigo me ofrece un piso por valor de 8MPts. Dejando de lado todos los otros factores intervinientes en la decisión de compra de un piso y solo teniendo en cuenta su precio, puedo considerar que se trata de ocasión para comprar?. Que suposiciones necesito hacer para resolver el problema. (Para resolver esta pregunta utilice los datos disponibles que crea conveniente).
+No se puede considerar que sea una ocasión para comprar sin, al menos, tener una ditribución de referencia de los precios promedio de los pisos.
