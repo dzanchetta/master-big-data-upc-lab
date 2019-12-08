@@ -1,0 +1,132 @@
+---
+title: "Exericio-04-12-2019-Regression"
+author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
+date: "06/12/2019"
+output: word_document
+---
+
+## Exercises: Regression
+
+### 1.	Enumere cuales son las hipótesis que asumimos al hacer una regresión múltiple entre una variable de respuesta y unas variables predictoras, x1, …, xp.
+Resp.: Podemos asumir hipotesis sin hacer suposiciones, donde se hace una regresión local estimando valores de r (fit) y error (e) desde los datos. O, por otro lado, haciendo suposiciones. En esta alternativa, tenemos que buscar la función de r (fit) asumiendo un valor de B0 (intercept) y BnXn(slope de las n predictoras - o mejor, la pendiente). El B0 sirve para ajustar la nuve de puntos, mientras que los predictores BnXn son valores teroricos que indican la variación de B0 (y) por cada incremiento de X.
+
+### 2.	En un modelo de regresión, como se calcula y como se interpreta el coeficiente de determinación R2.
+Resp.: Es calculado a través de la suma de la variación cuadratica de y explicada por el modelo (a través de los predictores) y el valor residual cuadratico.
+Cuanto más cerca de 1 se situe su valor, mayor será el ajuste del modelo a la variable que estamos intentando explicar. Esto se calcula a través del coseno cuadrico del valor de la suma total de cuadrados (TSS) y del valor de la variación explicada por el modelo (ESS).
+
+### 3.	Lea el fichero “BCN_pisos.txt”. Del fichero resultante seleccione 2/3 partes como muestra de training y la tercera parte restante como muestra test.
+```{r}
+bcnpisos<-read.csv("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 5 - 04-12/exer3/bcn_pisos.txt", header=TRUE,sep="\t")
+View(bcnpisos)
+
+# Inicialmente hemos mirado el dataframe BCN Pisos y habiamos planteado dividir 2/3 a través de la información del Ascensor, donde el 2/3 sería para CON ascensor, y el 1/3 SIN ascensor. Sin embargo, por fin, hemos decidido utilizar una función para definir los datos de training y de lo test.
+inTraining <- createDataPartition(bcnpisos$Superf,times=1,p=0.75, list=FALSE)
+training_bcnpisos <- bcnpisos[inTraining,]
+test_bcnpisos <- bcnpisos[-inTraining,]
+```
+### 4.	Con la muestra de training, efectúe la representación gráfica de la variable “Valor” respecto del resto de variables del fichero. Calcule la correlación entre la variable “Valor” y el resto de variables numéricas.
+```{r}
+# Valor con relación a Superf
+plot(training_bcnpisos$Superf, training_bcnpisos$Valor,xlab = "Superf", ylab = "Valor", main="Relacion entre Valor y Superficie", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Dorm
+plot(training_bcnpisos$Dorm, training_bcnpisos$Valor,xlab = "Dorm", ylab = "Valor", main="Relacion entre Valor y Dorm", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Banys
+plot(training_bcnpisos$Banys, training_bcnpisos$Valor,xlab = "Banys", ylab = "Valor", main="Relacion entre Valor y Banys", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Edat
+plot(training_bcnpisos$Edat, training_bcnpisos$Valor,xlab = "Edat", ylab = "Valor", main="Relacion entre Valor y Edat", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Estat
+plot(training_bcnpisos$Estat, training_bcnpisos$Valor,xlab = "Estat", ylab = "Valor", main="Relacion entre Valor y Estat", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Planta
+plot(training_bcnpisos$Planta, training_bcnpisos$Valor,xlab = "Planta", ylab = "Valor", main="Relacion entre Valor y Planta", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Dist
+plot(training_bcnpisos$Dist, training_bcnpisos$Valor,xlab = "Dist", ylab = "Valor", main="Relacion entre Valor y Dist", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a ValSol
+plot(training_bcnpisos$ValSol, training_bcnpisos$Valor,xlab = "ValSol", ylab = "Valor", main="Relacion entre Valor y ValSol", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Tipus
+plot(training_bcnpisos$Tipus, training_bcnpisos$Valor,xlab = "Tipus", ylab = "Valor", main="Relacion entre Valor y Tipus", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Ascensor
+plot(training_bcnpisos$Ascens, training_bcnpisos$Valor,xlab = "Ascensor", ylab = "Valor", main="Relacion entre Valor y Ascensor", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a ExtInt
+plot(training_bcnpisos$ExtInt, training_bcnpisos$Valor,xlab = "ExtInt", ylab = "Valor", main="Relacion entre Valor y ExtInt", type = "p", pch=19,col="darkblue")
+
+# Valor con relación a Reforma
+plot(training_bcnpisos$Reforma, training_bcnpisos$Valor,xlab = "Reforma", ylab = "Valor", main="Relacion entre Valor y Reforma", type = "p", pch=19,col="darkblue")
+
+#Correlación de Valor con las demás variables numericas de la muestra de Training
+cor(training_bcnpisos$Valor,training_bcnpisos[,unlist(lapply(training_bcnpisos,is.numeric))])
+```
+### 5.	Efectúe la regresión simple de la variable “Valor” respecto de la “Superficie”. A continuación añada a la regresión la variable “Número de dormitorios”. Es significativa esta variable una vez que el modelo ya contiene la variable “Superficie”.
+```{r}
+#Parte 1: regresión de Valor por la Superficie
+regresion_valor <- lm(Valor ~ Superf, data = training_bcnpisos)
+summary(regresion_valor)
+
+#Parte 2: regresión de Valor por la Superficie y Numero de Dormitorios
+regresion_valor_dorm <- lm(Valor ~ Superf + Dorm,data = training_bcnpisos)
+summary(regresion_valor_dorm)
+```
+Resp.: El resultado nos explica que añadir Dormitorios al modelo no es significativo. La variable Dormitorios es redundante, pues esta muy correlacionada a la variable Superficie. Este problema en estadistica es llamado Colinealidad de regresores.
+
+### 6.	Efectúe la regresión múltiple del “Valor” respecto el resto de variables del fichero “BCN_pisos”.¿Le parece que alguna variable predictora es no significativa?
+```{r}
+regresion_valor_tot <- lm(Valor ~.,data = training_bcnpisos)
+summary(regresion_valor_tot)
+
+anova(regresion_valor_tot)
+```
+Resp.: Al pricipio, nos parece que las variables Dormitorio, Ascensor, y algunas categorias de Reforma y Planta no son significativas. Sin embargo, al ejecutar el Analisis de Variancia, nos parece que solo la variable Ascensor es una variable predictora no significativa.
+
+### 7.	Encuentre la regresión óptima. ¿Cuál es el valor del R2 alcanzado?. ¿Y cuál el valor del R2 por validación cruzada “leave one out”?
+```{r}
+#En primer lugar hemos intentado utilizar el paquete olsrr, pero por ser muy time consuming, hemos elegido continuar el ejercicio con el stepwise. Hemos dejado el codigo con estas instrucciones para efectos de documentación.
+#library(olsrr)
+#bestreg <- ols_step_best_subset(regresion_valor_tot)
+
+stepwise <- step(regresion_valor_tot)
+stepwise
+summary(stepwise)
+
+regresion_valor_tot_step <- lm(formula = Valor ~ Superf + Dorm + Banys + Edat + Estat + Planta + Dist + ValSol + Tipus + ExtInt + Reforma, data = training_bcnpisos)
+
+PRESS <- sum((regresion_valor_tot_step$residuals/(1-ls.diag(regresion_valor_tot_step)$hat))^2)
+R2loo <- 1-PRESS/(var(training_bcnpisos$Valor)*(nrow(training_bcnpisos)-1))
+R2loo
+```
+Resp.: El valor de R2 alcanzado es de 94,59%, y el valor alcanzado para R2 Leave One Out es de 94,18%
+
+### 8.	Realice el análisis de los residuos. ¿Son normales los residuos?, ¿Existe alguna relación de dependencia con los valores ajustados?. ¿Existe heterocedasticidad?. ¿Existen observaciones influyentes?
+```{r}
+plot(density(regresion_valor_tot_step$residuals),col="red")
+
+par(mfrow = c(2, 2))
+plot(regresion_valor_tot_step)
+par(mfrow = c(1, 1))
+```
+Para contestar las preguntas:
+1) ¿Son normales los residuos? --> Resp.: A través del analisis de los residuos, vemos que son normales.
+2) ¿Existe alguna relación de dependencia con los valores ajustados? -->  Resp.: 
+3) ¿Existe heterocedasticidad? --> Resp.: Si, existe. A través del Scale-Location se puede ver que hay valores variados en el modelo.
+4) ¿Existen observaciones influyentes? --> Resp.: Mirando el Residuals vs Leverage (Cooks Distance) vemos observaciones que son potenciales outliers, sin embargo que no son observaciones influentes.
+
+### 9.	Obtenga el valor del R2 de predicción en la muestra test.
+```{r}
+pred <- predict(regresion_valor_tot_step, newdata = test_bcnpisos)
+predSSE <- sum((test_bcnpisos$Valor-pred)^2)
+R2Test <- 1-(predSSE)/(var(test_bcnpisos$Valor)*(nrow(test_bcnpisos)-1))
+R2Test
+```
+### 10.	Obtenga el fichero con las predicciones del valor de las viviendas con su intervalo de confianza del 95%, para los pisos de la muestra test.
+```{r}
+pred_int <- predict(regresion_valor_tot_step,newdata = test_bcnpisos, interval = "confidence")
+pred_int
+```
