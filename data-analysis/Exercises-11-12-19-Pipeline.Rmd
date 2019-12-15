@@ -1,0 +1,62 @@
+---
+title: "Class 11-12-19"
+author: "Lais Silva Almeida Zanchetta, Daniel Ferreira Zanchetta"
+date: "12/11/2019"
+output: html_document
+---
+
+### 1) Let’s play a bit with pipes. Using the pipeline operator perform the following operations:
+
+
+## a) Compute the squared root of the squared of any number.
+
+```{r}
+install.packages("magrittr")
+library(magrittr)
+
+var_quad <- function(x) x^2
+
+num_pipe_rsquared <- . %>% var_quad() %>% sqrt()
+num_pipe_rsquared(2)
+```
+
+## b) Sample 1000 individuals from a normal distribution (mean = 5 , sd = 3), standardize the sample (subtract the mean and divide by the standard deviation, i.e., scale) and compute the max value. 
+
+```{r}
+rnorm(n=1000,mean=5,sd=3) %>% scale(.,center=TRUE, scale=TRUE) %>% max(.) 
+```
+
+## c) Same as b) but plotting the density function before computing the max value.
+#P.S.: It is not possible to use the plot density inside the pipeline.
+
+```{r}
+plot_dens <- function(x) plot(density(x))
+
+rnorm(n=1000,mean=5,sd=3) %>% scale(.,center=TRUE, scale=TRUE) %T>% plot_dens(.) %>% max(.) 
+```
+
+### 2. With the pisos dataset and using an only pipeline, compute the following transformations:
+
+## a) Drop the duplicated individuals and compute the mean value of the flats (”Valor”) by district (”Dist”).
+
+```{r}
+bcnpisos <- read.table(file.choose(), header=TRUE) #to read files in mac chosing the file you want from the fold
+
+install.packages("dplyr")
+library(dplyr)
+
+ distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
+```
+
+## b) Drop the duplicated individuals, get the numeric features of the dataset and standardize it.
+
+```{r}
+distinct(bcnpisos) %>% .[,unlist(lapply(., is.numeric))] %>% scale(.,center = TRUE, scale = TRUE)
+```
+
+## c) Drop the duplicated individuals, add a new factor to the dataset ”Greater than is mean” with values (Y,N) indicating if the Value (”Valor”) of the flat is greater or not than the mean of the flats in the district.
+
+```{r}
+dist_mean <- distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
+head(distinct(bcnpisos) %>% left_join(y=dist_mean, by="Dist") %>% mutate("GREATER_THAN_IS_MEAN"=ifelse(Valor>mean_flats,"Y","N")))
+```
