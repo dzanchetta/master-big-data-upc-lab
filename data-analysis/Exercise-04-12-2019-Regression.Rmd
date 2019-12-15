@@ -1,5 +1,5 @@
 ---
-title: "Exericio-04-12-2019-Regression"
+title: "Ejercicio-04-12-2019-Regression"
 author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
 date: "06/12/2019"
 output: word_document
@@ -16,10 +16,10 @@ Cuanto más cerca de 1 se situe su valor, mayor será el ajuste del modelo a la 
 
 ### 3.	Lea el fichero “BCN_pisos.txt”. Del fichero resultante seleccione 2/3 partes como muestra de training y la tercera parte restante como muestra test.
 ```{r}
-bcnpisos<-read.csv("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 5 - 04-12/exer3/bcn_pisos.txt", header=TRUE,sep="\t")
-View(bcnpisos)
+bcnpisos<-read.csv("C:/Users/dev/Downloads/Sessio3_cursBigData_LinearModel/exer3/bcn_pisos.txt", header=TRUE,sep="\t")
 
 # Inicialmente hemos mirado el dataframe BCN Pisos y habiamos planteado dividir 2/3 a través de la información del Ascensor, donde el 2/3 sería para CON ascensor, y el 1/3 SIN ascensor. Sin embargo, por fin, hemos decidido utilizar una función para definir los datos de training y de lo test.
+library(caret)
 inTraining <- createDataPartition(bcnpisos$Superf,times=1,p=0.75, list=FALSE)
 training_bcnpisos <- bcnpisos[inTraining,]
 test_bcnpisos <- bcnpisos[-inTraining,]
@@ -96,7 +96,7 @@ stepwise <- step(regresion_valor_tot)
 stepwise
 summary(stepwise)
 
-regresion_valor_tot_step <- lm(formula = Valor ~ Superf + Dorm + Banys + Edat + Estat + Planta + Dist + ValSol + Tipus + ExtInt + Reforma, data = training_bcnpisos)
+regresion_valor_tot_step <- lm(formula = Valor ~ Superf + Banys + Edat + Estat + Planta + Dist + ValSol + Tipus + ExtInt + Reforma, data = training_bcnpisos)
 
 PRESS <- sum((regresion_valor_tot_step$residuals/(1-ls.diag(regresion_valor_tot_step)$hat))^2)
 R2loo <- 1-PRESS/(var(training_bcnpisos$Valor)*(nrow(training_bcnpisos)-1))
@@ -114,7 +114,7 @@ par(mfrow = c(1, 1))
 ```
 Para contestar las preguntas:
 1) ¿Son normales los residuos? --> Resp.: A través del analisis de los residuos, vemos que son normales.
-2) ¿Existe alguna relación de dependencia con los valores ajustados? -->  Resp.: 
+2) ¿Existe alguna relación de dependencia con los valores ajustados? -->  Resp.: Si, es notable en el Scale-Location.
 3) ¿Existe heterocedasticidad? --> Resp.: Si, existe. A través del Scale-Location se puede ver que hay valores variados en el modelo.
 4) ¿Existen observaciones influyentes? --> Resp.: Mirando el Residuals vs Leverage (Cooks Distance) vemos observaciones que son potenciales outliers, sin embargo que no son observaciones influentes.
 
@@ -128,5 +128,6 @@ R2Test
 ### 10.	Obtenga el fichero con las predicciones del valor de las viviendas con su intervalo de confianza del 95%, para los pisos de la muestra test.
 ```{r}
 pred_int <- predict(regresion_valor_tot_step,newdata = test_bcnpisos, interval = "confidence")
-pred_int
+head(pred_int)
 ```
+Resp.: No hemos podido encontrar predicciones del valor de las viviendas con su intervalo de confianza del 95% para los pisos de la muestra test. Los valores resultantes eran muy parecidos con la muestra de valores que hemos imprimido para completar este ejercicio.
