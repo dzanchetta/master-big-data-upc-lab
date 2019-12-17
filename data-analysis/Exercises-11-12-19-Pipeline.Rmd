@@ -60,3 +60,42 @@ distinct(bcnpisos) %>% .[,unlist(lapply(., is.numeric))] %>% scale(.,center = TR
 dist_mean <- distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
 head(distinct(bcnpisos) %>% left_join(y=dist_mean, by="Dist") %>% mutate("GREATER_THAN_IS_MEAN"=ifelse(Valor>mean_flats,"Y","N")))
 ```
+
+### 3) Finally, you are asked to do a complete transformation of the pisos dataset. We want to analyse and visualize some general features of the districts of the city, characterizing a sample of flats. 
+
+## a) Propose R code for the transformation of this dataset. You are free to use any technique explained during the course (and others) but the use of some pipes will be valued positively (7 points).
+
+1Dorm...5Dorm. The number of flats with 1..5 dormitories 
+
+```{r}
+fun <- function(x) 
+  if (x == 1) {
+     a <- a + 1
+     } else if (x == 2) {
+     b <- b + 1
+     } else if (x == 3) {
+       c <- c + 1
+       } else if (x == 4) {
+         d <- d + 1
+         } else if (x == 5) {
+           e <- e + 1
+         }
+
+numb_dorm <- lapply (bcnpisos$Dorm, fun)
+```
+
+items3= unite(data = items4,
+col = "Sales_2018_new_used",
+sep = "/", c("Sales_2018_new", "Sales_2018_used"))
+
+#AscS, AscN. The number of flats with and without elevator
+
+# Dist + Mean (Valor. The mean of the prices in this district; DistrictName. The name of the district )
+```{r}
+new_data <- distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
+```
+
+Codigo do Dani a partir daqui:
+```{r}
+new_bcnpisos <- bcnpisos %>% distinct %>% group_by(DistrictName = Dist) %>% spread(.,key=Dorm,value = Dorm,fill = 0) %>%
+```
