@@ -1,17 +1,18 @@
 ---
-title: "Class 11-12-19"
+title: "Exercises Class 11-12-19 - Pipeline"
 author: "Lais Silva Almeida Zanchetta, Daniel Ferreira Zanchetta"
-date: "12/11/2019"
-output: html_document
+date: "18/11/2019"
+output:
+  word_document: default
+  html_document: default
 ---
 
-### 1) Let’s play a bit with pipes. Using the pipeline operator perform the following operations:
+## 1) Let’s play a bit with pipes. Using the pipeline operator perform the following operations:
 
 
-## a) Compute the squared root of the squared of any number.
+### a) Compute the squared root of the squared of any number.
 
 ```{r}
-install.packages("magrittr")
 library(magrittr)
 
 var_quad <- function(x) x^2
@@ -20,13 +21,13 @@ num_pipe_rsquared <- . %>% var_quad() %>% sqrt()
 num_pipe_rsquared(2)
 ```
 
-## b) Sample 1000 individuals from a normal distribution (mean = 5 , sd = 3), standardize the sample (subtract the mean and divide by the standard deviation, i.e., scale) and compute the max value. 
+### b) Sample 1000 individuals from a normal distribution (mean = 5 , sd = 3), standardize the sample (subtract the mean and divide by the standard deviation, i.e., scale) and compute the max value. 
 
 ```{r}
 rnorm(n=1000,mean=5,sd=3) %>% scale(.,center=TRUE, scale=TRUE) %>% max(.) 
 ```
 
-## c) Same as b) but plotting the density function before computing the max value.
+### c) Same as b) but plotting the density function before computing the max value.
 #P.S.: It is not possible to use the plot density inside the pipeline.
 
 ```{r}
@@ -35,67 +36,60 @@ plot_dens <- function(x) plot(density(x))
 rnorm(n=1000,mean=5,sd=3) %>% scale(.,center=TRUE, scale=TRUE) %T>% plot_dens(.) %>% max(.) 
 ```
 
-### 2. With the pisos dataset and using an only pipeline, compute the following transformations:
+## 2. With the pisos dataset and using an only pipeline, compute the following transformations:
 
-## a) Drop the duplicated individuals and compute the mean value of the flats (”Valor”) by district (”Dist”).
+### a) Drop the duplicated individuals and compute the mean value of the flats (”Valor”) by district (”Dist”).
 
 ```{r}
 bcnpisos <- read.table(file.choose(), header=TRUE) #to read files in mac chosing the file you want from the fold
 
-install.packages("dplyr")
 library(dplyr)
 
  distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
 ```
 
-## b) Drop the duplicated individuals, get the numeric features of the dataset and standardize it.
+### b) Drop the duplicated individuals, get the numeric features of the dataset and standardize it.
 
 ```{r}
-distinct(bcnpisos) %>% .[,unlist(lapply(., is.numeric))] %>% scale(.,center = TRUE, scale = TRUE)
+bcn_numeric <- distinct(bcnpisos) %>% .[,unlist(lapply(., is.numeric))] %>% scale(.,center = TRUE, scale = TRUE)
+head(bcn_numeric)
 ```
 
-## c) Drop the duplicated individuals, add a new factor to the dataset ”Greater than is mean” with values (Y,N) indicating if the Value (”Valor”) of the flat is greater or not than the mean of the flats in the district.
+### c) Drop the duplicated individuals, add a new factor to the dataset ”Greater than is mean” with values (Y,N) indicating if the Value (”Valor”) of the flat is greater or not than the mean of the flats in the district.
 
 ```{r}
 dist_mean <- distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
-head(distinct(bcnpisos) %>% left_join(y=dist_mean, by="Dist") %>% mutate("GREATER_THAN_IS_MEAN"=ifelse(Valor>mean_flats,"Y","N")))
+dist_greater <- distinct(bcnpisos) %>% left_join(y=dist_mean, by="Dist") %>% mutate("GREATER_THAN_IS_MEAN"=ifelse(Valor>mean_flats,"Y","N"))
+head(dist_greater)
 ```
 
-### 3) Finally, you are asked to do a complete transformation of the pisos dataset. We want to analyse and visualize some general features of the districts of the city, characterizing a sample of flats. 
+## 3) Finally, you are asked to do a complete transformation of the pisos dataset. We want to analyse and visualize some general features of the districts of the city, characterizing a sample of flats. 
 
-## a) Propose R code for the transformation of this dataset. You are free to use any technique explained during the course (and others) but the use of some pipes will be valued positively (7 points).
-
-1Dorm...5Dorm. The number of flats with 1..5 dormitories 
-
+### a) Propose R code for the transformation of this dataset. You are free to use any technique explained during the course (and others) but the use of some pipes will be valued positively (7 points).
 ```{r}
-fun <- function(x) 
-  if (x == 1) {
-     a <- a + 1
-     } else if (x == 2) {
-     b <- b + 1
-     } else if (x == 3) {
-       c <- c + 1
-       } else if (x == 4) {
-         d <- d + 1
-         } else if (x == 5) {
-           e <- e + 1
-         }
+library(dplyr)
+new_bcnpisos <- bcnpisos %>% distinct %>% group_by(Dist) %>% rename(DistrictName = Dist) %>% summarise('1Dorm' = sum(Dorm==1),'2Dorm' = sum(Dorm==2),'3Dorm' = sum(Dorm == 3), '4Dorm' = sum(Dorm == 4), '5Dorm' = sum(Dorm == 5), 'Valor' = mean(Valor, na.rm = TRUE), 'AscS' = sum(Ascens == 'SI'), 'AscN' = sum(Ascens == 'NO'), 'Atic' = sum(Planta == 'Atic'), 'Bajos' = sum(Planta == 'Bajos'), 'Planta' = sum(Planta == 'Planta'), 'Nous' = sum(Edat <= 10), 'SemiNous' = sum(Edat >=11 && Edat <=20), 'Vells' = sum(Edat >=21 && Edat<=50), 'MoltVells' = sum(Edat >= 51), 'Superf' = mean(Superf, na.rm = TRUE)
+)
 
-numb_dorm <- lapply (bcnpisos$Dorm, fun)
+arrange(new_bcnpisos, DistrictName)
 ```
 
-items3= unite(data = items4,
-col = "Sales_2018_new_used",
-sep = "/", c("Sales_2018_new", "Sales_2018_used"))
-
-#AscS, AscN. The number of flats with and without elevator
-
-# Dist + Mean (Valor. The mean of the prices in this district; DistrictName. The name of the district )
+### b) Propose nice visualizations of this new dataset (3 points).
 ```{r}
-new_data <- distinct(bcnpisos) %>% group_by(Dist) %>% summarise(mean_flats = mean(Valor)) 
-```
+library(ggplot2)
+library(plotrix)
+library(dplyr)
+library(tidyr)
 
-Codigo do Dani a partir daqui:
-```{r}
-new_bcnpisos <- bcnpisos %>% distinct %>% group_by(DistrictName = Dist) %>% spread(.,key=Dorm,value = Dorm,fill = 0) %>%
+slices <- new_bcnpisos$Valor
+labels <- new_bcnpisos$DistrictName
+pie3D(slices,labels = labels, explode=0.25, main="District vs Valor")
+
+new_bcnpisos %>% arrange(desc(DistrictName)) %>% ggplot(aes(x=Superf,y=DistrictName, size=Valor))+
+  geom_point(alpha=0.5) +
+  scale_size(range = c(.1, 24), name="Valor (M)") +
+  theme(legend.position="bottom") +
+  ylab("Nombre Districto") +
+  xlab("Superficie") +
+  theme(axis.title.y = element_text(angle = 1))
 ```
