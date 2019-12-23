@@ -1,0 +1,152 @@
+---
+title: "Exercises Session 18/12/19: Profiling"
+author: "Daniel Zanchetta and Lais Zanchetta"
+date: "23/12/2019"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.	Lea este fichero y efectúe un “summary” de los datos. ¿Detecta algún error o inconsistencia?. Si es así, corríjalo.
+```{r}
+churn <- read.delim(file = file.choose(),header = TRUE,sep = "")
+summary(churn)
+
+library(dplyr)
+library(tidyr)
+
+churn_tidy <- churn %>% 
+  separate(Baja, into = c("Baja_Rem","Baja"), sep = " ", extra = "merge", fill = "left") %>% 
+  separate(edatcat, into = c("edatcat_Rem", "edatcat","edatcat_Rem2","edatcat_Rem3"), sep = "([\\ \\.\\.])", extra = "merge", fill = "right") %>%
+  separate(Nomina, into = c("Nomina_Rem", "Nomina"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Pension, into = c("Pension_Rem", "Pension"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Debito_normal, into = c("Debito_normal_Rem","Debito_normal_Rem2", "Debito_normal"), sep = "([\\ \\ ])", extra = "merge", fill = "left") %>%
+  separate(Debito_aff, into = c("Debito_aff_Rem","Debito_aff_Rem2", "Debito_aff"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  separate(VISA, into = c("VISA_Rem", "VISA"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(VISA_aff, into = c("VISA_aff_Rem","VISA_aff_Rem2", "VISA_aff"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  separate(MCard, into = c("MCard_Rem", "MCard"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Amex, into = c("Amex_Rem", "Amex"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(dif_resid, into = c("dif_resid_Rem","dif_resid_Rem2", "dif_resid"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  select(-c("Baja_Rem", "edatcat_Rem","edatcat_Rem2","edatcat_Rem3","Nomina_Rem","Pension_Rem","Debito_normal_Rem","Debito_normal_Rem2","Debito_aff_Rem","Debito_aff_Rem2","VISA_Rem","VISA_aff_Rem","VISA_aff_Rem2","MCard_Rem","Amex_Rem","dif_resid_Rem","dif_resid_Rem2"))
+
+head(churn_tidy)
+#Summary with the tidy dataframe
+summary(churn_tidy)
+```
+
+## 2.	Especifique cuál es la variable de respuesta y cuáles son las explicativas y el tipo de todas ellas.
+Resp.: La variable de respuesta es la "Baja". Todas las demás variables del dataset son calificadas como explicativas. Abajo son todas las variables con sus respectivos tipos:
+#### Variable Respuesta:
+"Baja" - Categórica
+
+#### Variables explicativas:
+"edatcat" - Categórica
+"sexo" - Categórica
+"antig" - Continua
+"Nomina" - Categórica
+"Pension" - Categórica 
+"Debito_normal" - Categórica
+"Debito_aff" - Categórica
+"VISA" - Categórica
+"VISA_aff" - Categórica
+"MCard" - Categórica
+"Amex" - Categórica
+"Total_activo" - Continua
+"Total_Plazo" - Continua
+"Total_Inversion" - Continua
+"Total_Seguros" - Continua
+"Total_Vista" - Continua
+"dif_resid" - Categórica
+"oper_caj_Libreta" - Continua
+"oper_ven_Libreta" - Continua
+"dif_CC" - Continua
+"dif_Libreta" - Continua
+"dif_Plazo" - Continua
+"dif_Ahorro" - Continua
+"dif_Largo_plazo" - Continua
+"dif_Fondos_inv" - Continua
+"dif_Seguros" - Continua
+"dif_Planes_pension" - Continua
+"dif_Hipoteca" - Continua
+"dif_Prest_personales" - Continua
+
+## 3.	Efectúe una gráfica de los datos; un diagrama de barras para las variables categóricas y un histograma para las variables continuas.
+```{r}
+#Grafica para variables tipo categórica
+baja <- table(churn_tidy$Baja) %>% prop.table()
+barplot(baja, ylab = "Frecuencia Relativa", xlab = "Baja", col = c("red","green"))
+
+freq.edat <- table(churn_tidy$edatcat)
+barplot(freq.edat, ylab = "Frecuencia Relativa", xlab = "Edatcat", border = "blue" ,col = "darkred", density = 20)
+
+freq.sexo <- table(churn_tidy$sexo)
+barplot(freq.sexo, ylab = "Frecuencia Relativa", xlab = "Sexo", col = c("green","grey"))
+
+freq.nomina <- table(churn_tidy$Nomina)
+barplot(freq.nomina, ylab = "Frecuencia Relativa", xlab = "Nomina", col = c("red","green"))
+
+freq.pension <- table(churn_tidy$Pension)
+barplot(freq.pension, ylab = "Frecuencia Relativa", xlab = "Pension", col = c("red","green"))
+
+freq.deb <- table(churn_tidy$Debito_normal)
+barplot(freq.deb, ylab = "Frecuencia Relativa", xlab = "Debito Normal", col = c("red","green"))
+
+freq.deb.aff <- table(churn_tidy$Debito_aff)
+barplot(freq.deb.aff, ylab = "Frecuencia Relativa", xlab = "Debito Aff", col = c("red","green"))
+
+freq.visa <- table(churn_tidy$VISA)
+barplot(freq.visa, ylab = "Frecuencia Relativa", xlab = "VISA", col = c("red","green"))
+
+freq.visa.aff <- table(churn_tidy$VISA_aff)
+barplot(freq.visa.aff, ylab = "Frecuencia Relativa", xlab = "VISA aff", col = c("red","green"))
+
+freq.mcard <- table(churn_tidy$MCard)
+barplot(freq.mcard, ylab = "Frecuencia Relativa", xlab = "Master Card", col = c("red","green"))
+
+freq.amex <- table(churn_tidy$Amex)
+barplot(freq.amex, ylab = "Frecuencia Relativa", xlab = "Amex", col = c("red","green"))
+
+freq.difresid <- table(churn_tidy$dif_resid)
+barplot(freq.difresid, ylab = "Frecuencia Relativa", xlab = "Diferencia Residual", col = c("red","green"))
+
+#Grafica para variables tipo continuas
+par(mfrow=c(2, 2))
+hist(churn_tidy$antig,breaks = 30,col = "lightblue",xlab = "Antig", main = "Histogram")
+hist(churn_tidy$Total_activo,breaks = 30,col = "lightblue",xlab = "Total Activo", main = "Histogram")
+hist(churn_tidy$Total_Plazo,breaks = 30,col = "lightblue",xlab = "Total Plazo", main = "Histogram")
+hist(churn_tidy$Total_Inversion,breaks = 30,col = "lightblue",xlab = "Total Inversion", main = "Histogram")
+hist(churn_tidy$Total_Seguros,breaks = 30,col = "lightblue",xlab = "Total Seguros", main = "Histogram")
+hist(churn_tidy$Total_Vista,breaks = 30,col = "lightblue",xlab = "Total Vista", main = "Histogram")
+hist(churn_tidy$oper_caj_Libreta,breaks = 30,col = "lightblue",xlab = "Operación Caja Libreta", main = "Histogram")
+hist(churn_tidy$oper_ven_Libreta,breaks = 30,col = "lightblue",xlab = "Operación Venta Libreta", main = "Histogram")
+hist(churn_tidy$dif_CC,breaks = 30,col = "lightblue",xlab = "Diferencia CC", main = "Histogram")
+hist(churn_tidy$dif_Libreta,breaks = 30,col = "lightblue",xlab = "Diferencia Libreta", main = "Histogram")
+hist(churn_tidy$dif_Plazo,breaks = 30,col = "lightblue",xlab = "Diferencia Plazo", main = "Histogram")
+hist(churn_tidy$dif_Ahorro,breaks = 30,col = "lightblue",xlab = "Diferencia Ahorro", main = "Histogram")
+hist(churn_tidy$dif_Largo_plazo,breaks = 30,col = "lightblue",xlab = "Diferencia Largo Plazo", main = "Histogram")
+hist(churn_tidy$dif_Fondos_inv,breaks = 30,col = "lightblue",xlab = "Diferencia Fondos de Inversión", main = "Histogram")
+hist(churn_tidy$dif_Seguros,breaks = 30,col = "lightblue",xlab = "Diferencia Seguros", main = "Histogram")
+hist(churn_tidy$dif_Planes_pension,breaks = 30,col = "lightblue",xlab = "Diferencia Planes de Pensión", main = "Histogram")
+hist(churn_tidy$dif_Hipoteca,breaks = 30,col = "lightblue",xlab = "Diferencia Hipoteca", main = "Histogram")
+hist(churn_tidy$dif_Prest_personales,breaks = 30,col = "lightblue",xlab = "Diferencia Prestamo Personales", main = "Histogram")
+```
+
+## 4.	Efectúe el “profiling” de las bajas (con la función catdes de la librería “FactoMineR”). Interprete el resultado.
+```{r}
+library(FactoMineR)
+descBaja <- catdes(churn_tidy, num.var=1)
+descBaja$quanti$SI
+descBaja$category$SI
+
+plot(descBaja,barplot = T)
+```
+
+Resp.: Para realizar la interpretación hemos analisado los resultados obtenidosa través de la función catdes, donde "quanti" representa la descripción de cada categoria por cada variable continua, y "category" representa la descripción de cada categoria por cada categoria entre todas variables categoricas. Ha sido considerada solo la variable Baja (num.var=1).
+Con esto, los analisis se centraron en Overall mean, Mean in Category, v.test para "quanti", y en Global, Mod/Cla y v.test para "category". 
+La interpretación que hacemos es que las variables que más caracterizan la baja son de aquellos que tienen más en Total a Vista, total Plazo y en totales de activo y de inversión. Aun, estan en el mismo perfil de baja aquellos que tienen VISA, nomina, que tienen edad entre 56 y 65 años y pensión. 
+Para comentarlo tambien, hay una una diferencia negativa en v.test sobre, por ejemplo, la diferencia de Libreta en los ultimos 3 meses antes de su baja.
+Por lo tanto, se podría llegar a pensar que el "Profile" para las bajas es de personas mayores, probablemente recien jubiladas, y que tienen condiciones financieras estables.
+
+## 5.	Represente visualmente la relación de las variables explicativas con la variable de respuesta; para ello discretize las variables continuas (esto es, recodifíquelas según un cierto número de intervalos; tenga en cuenta el significado especial del valor 0 a la hora de establecer los intervalos de recodificación) y represente mediante barplots el porcentaje de baja de las modalidades de las variables categóricas (tanto las categóricas originales como las continuas recodificadas).
