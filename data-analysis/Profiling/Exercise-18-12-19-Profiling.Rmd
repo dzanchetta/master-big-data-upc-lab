@@ -17,7 +17,7 @@ summary(churn)
 library(dplyr)
 library(tidyr)
 
-churn_tidy <- churn %>% 
+churn_tidy <- churn %>% drop_na() %>% 
   separate(Baja, into = c("Baja_Rem","Baja"), sep = " ", extra = "merge", fill = "left") %>% 
   separate(edatcat, into = c("edatcat_Rem", "edatcat","edatcat_Rem2","edatcat_Rem3"), sep = "([\\ \\.\\.])", extra = "merge", fill = "right") %>%
   separate(Nomina, into = c("Nomina_Rem", "Nomina"), sep = " ", extra = "merge", fill = "left") %>%
@@ -38,6 +38,7 @@ summary(churn_tidy)
 
 ## 2.	Especifique cuál es la variable de respuesta y cuáles son las explicativas y el tipo de todas ellas.
 Resp.: La variable de respuesta es la "Baja". Todas las demás variables del dataset son calificadas como explicativas. Abajo son todas las variables con sus respectivos tipos:
+
 #### Variable Respuesta:
 "Baja" - Categórica
 
@@ -75,7 +76,8 @@ Resp.: La variable de respuesta es la "Baja". Todas las demás variables del dat
 ## 3.	Efectúe una gráfica de los datos; un diagrama de barras para las variables categóricas y un histograma para las variables continuas.
 ```{r}
 #Grafica para variables tipo categórica
-baja <- table(churn_tidy$Baja) %>% prop.table()
+par(mfrow=c(2, 2))
+baja <- table(churn_tidy$Baja)
 barplot(baja, ylab = "Frecuencia Relativa", xlab = "Baja", col = c("red","green"))
 
 freq.edat <- table(churn_tidy$edatcat)
@@ -143,10 +145,219 @@ descBaja$category$SI
 plot(descBaja,barplot = T)
 ```
 
-Resp.: Para realizar la interpretación hemos analisado los resultados obtenidosa través de la función catdes, donde "quanti" representa la descripción de cada categoria por cada variable continua, y "category" representa la descripción de cada categoria por cada categoria entre todas variables categoricas. Ha sido considerada solo la variable Baja (num.var=1).
+Resp.: Para realizar la interpretación hemos analisado los resultados obtenidos através de la función catdes, donde "quanti" representa la descripción de cada categoria por cada variable continua, y "category" representa la descripción de cada categoria por cada categoria entre todas variables categoricas. Ha sido considerada solo la variable Baja (num.var=1).
 Con esto, los analisis se centraron en Overall mean, Mean in Category, v.test para "quanti", y en Global, Mod/Cla y v.test para "category". 
 La interpretación que hacemos es que las variables que más caracterizan la baja son de aquellos que tienen más en Total a Vista, total Plazo y en totales de activo y de inversión. Aun, estan en el mismo perfil de baja aquellos que tienen VISA, nomina, que tienen edad entre 56 y 65 años y pensión. 
 Para comentarlo tambien, hay una una diferencia negativa en v.test sobre, por ejemplo, la diferencia de Libreta en los ultimos 3 meses antes de su baja.
 Por lo tanto, se podría llegar a pensar que el "Profile" para las bajas es de personas mayores, probablemente recien jubiladas, y que tienen condiciones financieras estables.
 
 ## 5.	Represente visualmente la relación de las variables explicativas con la variable de respuesta; para ello discretize las variables continuas (esto es, recodifíquelas según un cierto número de intervalos; tenga en cuenta el significado especial del valor 0 a la hora de establecer los intervalos de recodificación) y represente mediante barplots el porcentaje de baja de las modalidades de las variables categóricas (tanto las categóricas originales como las continuas recodificadas).
+```{r}
+churn_tidy2 = churn_tidy
+
+churn_tidy2$Rec_tot_activo = cut(churn_tidy2$Total_activo, breaks=c(0,0.0001,150,400,1000,3000,99000),include.lowest=T)
+
+churn_tidy2$Rec_tot_plazo = cut(churn_tidy2$Total_Plazo, breaks=c(0,0.0001,700,2000,4000,8000,99000),include.lowest=T)
+
+churn_tidy2$Rec_tot_inversion = cut(churn_tidy2$Total_Inversion, breaks=c(0,0.0001,700,2000,4000,8000,99000),include.lowest=T)
+
+churn_tidy2$Rec_tot_seguros = cut(churn_tidy2$Total_Seguros, breaks=c(0,0.0001,150,400,1000,3000,99000),include.lowest=T)
+ 
+churn_tidy2$Rec_tot_vista = cut(churn_tidy2$Total_Vista, breaks=c(0,0.0001,50,150,400,1000,99000),include.lowest=T)
+
+churn_tidy2$Rec_oper_caj_Libreta = cut(churn_tidy2$oper_caj_Libreta, breaks=c(-9000,-100,-20,-0.0001,0,20,100,9000))
+
+churn_tidy2$Rec_oper_ven_Libreta = cut(churn_tidy2$oper_ven_Libreta, breaks=c(-9000,-100,-20,-0.0001,0,20,100,9000))
+
+churn_tidy2$Rec_dif_CC= cut(churn_tidy2$dif_CC, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Libreta= cut(churn_tidy2$dif_Libreta, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Plazo= cut(churn_tidy2$dif_Plazo, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Ahorro= cut(churn_tidy2$dif_Ahorro, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Largo_plazo= cut(churn_tidy2$dif_Largo_plazo, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Fondos_inv= cut(churn_tidy2$dif_Fondos_inv, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Seguros= cut(churn_tidy2$dif_Seguros, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Planes_pension= cut(churn_tidy2$dif_Planes_pension, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Hipoteca= cut(churn_tidy2$dif_Hipoteca, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+
+churn_tidy2$Rec_dif_Prest_personales= cut(churn_tidy2$dif_Prest_personales, breaks=c(-99000,-100,-0.0001,0,20,200,1000,99000))
+```
+
+Grafica de la variable Baja con las categóricas originales:
+```{r}
+par(mfrow=c(2,2))
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$edatcat) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Edad", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$sexo) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Sexo", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Nomina) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Nomina", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Pension) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Pension", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Debito_normal) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Debito_normal", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Debito_aff) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Debito_aff", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$VISA) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "VISA", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$VISA_aff) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "VISA_aff", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$MCard) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "MCard", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Amex) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Amex", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+```
+
+Grafica de la variable Baja con las continuas codificadas:
+```{r}
+par(mfrow=c(2,2))
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_tot_activo) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_tot_activo", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_tot_plazo) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_tot_plazo", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_tot_inversion) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_tot_inversion", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_tot_seguros) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_tot_seguros", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_tot_vista) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_tot_vista", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_oper_caj_Libreta) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_oper_caj_Libreta", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_oper_ven_Libreta) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_oper_ven_Libreta", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_CC) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_CC", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Libreta) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Libreta", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Plazo) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Plazo", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Ahorro) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Ahorro", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Largo_plazo) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Largo_plazo", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Fondos_inv) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Fondos_inv", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Seguros) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Seguros", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Planes_pension) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Planes_pension", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Hipoteca) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Hipoteca", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+
+freq.rel.baja <- table(churn_tidy2$Baja,churn_tidy2$Rec_dif_Prest_personales) %>% prop.table(margin = 2)
+barplot(freq.rel.baja, ylab = "Frecuencia Relativa", xlab = "Rec_dif_Prest_personales", beside = TRUE, ylim = c(0,1), col = c("lightblue","darkblue"))
+legend('topright',legend=rownames(freq.rel.baja),bty ='n', fill = c("lightblue","darkblue"))
+```
+
+## 6.	Suponga que quiere analizar la compra de un producto a partir del barrio de residencia (alto o bajo) (indicador del poder adquisitivo del cliente). En un primer análisis de obtiene la siguiente tabla: 
+	          Compra SI	Compra NO	Total
+  Clase alta	20	      373	     393
+  Clase baja	6	        316	     322
+### En su opinión, ¿el poder adquisitivo del cliente, tiene alguna influencia sobre la compra o no del producto? (Responda sólo calculando las probabilidades, sin realizar la prueba de hipótesis de igualdad entre ambas probabilidades). 
+```{r}
+datoscompra <- data.frame("Clase" = c("Clase alta","Clase baja"),"Compra SI" = c(20,6), "Compra NO" = c(373,316),"Total"=c(393,322))
+datoscompra
+
+perccompraalta <- datoscompra$Compra.SI[datoscompra$Clase == "Clase alta"]/datoscompra$Total[datoscompra$Clase == "Clase alta"] * 100
+paste("Porcentaje de compra en la clase alta: ",perccompraalta)
+
+percomprabaja <- datoscompra$Compra.SI[datoscompra$Clase == "Clase baja"]/datoscompra$Total[datoscompra$Clase == "Clase baja"] * 100
+paste("Porcentaje de compra en la clase baja: ",percomprabaja)
+```
+Resp.: Solo calculando las probabilidades seria posible decir que el poder adquisitivo del cliente si que tiene influencia sobre la compra. Esto pues la probabilidad de alguien de la clase alta comprar el producto se presenta mas grande en relación a clase baja.
+
+### Un empleado senior de la compañía nos sugiere profundizar más en el análisis y tener en cuenta la edad de los clientes. Cruzando por edad (adulto o joven) los dos tipos de barrio mencionados, obtenemos las siguientes tablas:
+ADULTOS	Compra SI	Compra NO	Total
+Clase alta	3	176	179
+Clase baja	4	293	297
+JOVENES	Compra SI	Compra NO	Total
+Clase alta	17	197	214
+Clase baja	2	23	25
+### ¿Tenía razón el empleado de que era conveniente tener en cuenta la edad?. ¿Cuál de los dos factores, el barrio de residencia o la edad, es el determinante en la compra del producto en cuestión?
+```{r}
+datosadulto <- data.frame("Clase" = c("Clase alta","Clase baja"),"Compra SI" = c(3,4), "Compra NO" = c(176,293),"Total"=c(179,297))
+datosadulto
+
+datosjovenes <- data.frame("Clase" = c("Clase alta","Clase baja"),"Compra SI" = c(17,2), "Compra NO" = c(197,23),"Total"=c(214,25))
+datosjovenes
+
+#Percentaje de jovenes por el total general
+sum(datosjovenes$Total) / sum(datosadulto$Total,datosjovenes$Total) * 100
+
+#Percentaje de adultos por el total general
+sum(datosadulto$Total) / sum(datosadulto$Total,datosjovenes$Total) * 100
+
+#Percentaje de compra por jovenes, en relacion al total del grupo
+sum(datosjovenes$Compra.SI) / sum(datosjovenes$Total) * 100
+
+#Percentaje de compra por adultos, en relacion al total del grupo
+sum(datosadulto$Compra.SI) / sum(datosadulto$Total) * 100
+
+#Percentaje de compra por clase alta, en relacion al total grupo
+datosjovenes$Compra.SI[datosjovenes$Clase == "Clase alta"] / datosjovenes$Total[datosjovenes$Clase == "Clase alta"] * 100
+datosjovenes$Compra.SI[datosjovenes$Clase == "Clase baja"] / datosjovenes$Total[datosjovenes$Clase == "Clase baja"] * 100
+
+#Percentaje de compra por clase baja, en relacion al total grupo
+datosadulto$Compra.SI[datosadulto$Clase == "Clase alta"] / datosadulto$Total[datosadulto$Clase == "Clase alta"] * 100
+datosadulto$Compra.SI[datosadulto$Clase == "Clase baja"] / datosadulto$Total[datosadulto$Clase == "Clase baja"] * 100
+```
+
+Resp.: Para realizar estos calculos, hemos intentado basarnos en el Paradojo de Simpson, en que demuestra que las relaciones estadisticas observadas en una población puede ser invertida/contradicha por sus subgrupos que forman esta población. 
+Teniendo esto en cuenta, podemos decir que el empleado tenia razón en considerar la edad, porque esta variable nos ha parecido más determinante que el bario/clase para la compra del producto.
