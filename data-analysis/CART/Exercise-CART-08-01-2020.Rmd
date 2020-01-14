@@ -1,0 +1,176 @@
+---
+title: "Exercise CART Class 08-01-2020"
+author: "Daniel Zanchetta and Lais Zanchetta"
+date: "11/01/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.	Suponga el siguiente árbol simple T con sólo dos nodos (hojas) terminales. En el nodo raíz se tiene 100 individuos que se dividen en dos nodos hijos de 60 y 40 individuos cada uno. La variable de respuesta indica la compra (No o Si) de un cierto producto. Calcule la reducción de impureza que se obtiene al pasar del nodo padre a los dos nodos hijos.
+```{r}
+#Nodo 1:
+pnodo1 <- (1/60)^2 + (59/60)^2
+
+#Nodo 2:
+pnodo2 <- (21/40)^2 + (19/40)^2
+
+#Gini index padre
+it0 <- round((pnodo1*(60/100) + pnodo2*(40/100)),3)
+
+#Gini index nodo hijo 1
+it1 <- round(1-(1/60)^2-(59/60)^2,3)
+
+#Gini index nodo hijo 2
+it2 <- round(1-(21/40)^2-(19/40)^2,3)
+
+#Drecrement of impurity
+deltait <- it0 - ((60/100)*it1) - ((40/100)*it2)
+deltait
+```
+
+## 2.	Con el mismo árbol precedente, calcule su coste de mal clasificación R(T).
+```{r}
+#Para hacer el calculo del coste de cada nodo hijo (rt1 y rt2 abajo), hemos utilizado el valor correspondiente al SI para realización de la compra.
+rt1 <- 1-(1/60)
+rt1
+rt2 <- 1-(19/40)
+rt2
+```
+
+## 3.	Retome los datos del problema churn. Se trata ahora de obtener un árbol de decisión que nos permita efectuar predicciones sobre la probabilidad de baja de los clientes. Cargue en R la Liberia rpart y obtenga un árbol máximo (cp=0.0001) con crossvalidación (xval=10).
+```{r}
+#library(mice)
+library(rpart)
+library(dplyr)
+library(tidyr)
+library(mice)
+
+setwd("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 8 - 08-01/exer_cart")
+churn <- read.table(file = "churn.txt",header = TRUE,sep = "")
+churn$antig[churn$antig==99] <- NA
+churn <- mice::complete(mice(churn, m=1))
+
+churn_tidy <- churn %>%
+  separate(Baja, into = c("Baja_Rem","Baja"), sep = " ", extra = "merge", fill = "left") %>% 
+  separate(edatcat, into = c("edatcat_Rem", "edatcat","edatcat_Rem2","edatcat_Rem3"), sep = "([\\ \\.\\.])", extra = "merge", fill = "right") %>%
+  separate(Nomina, into = c("Nomina_Rem", "Nomina"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Pension, into = c("Pension_Rem", "Pension"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Debito_normal, into = c("Debito_normal_Rem","Debito_normal_Rem2", "Debito_normal"), sep = "([\\ \\ ])", extra = "merge", fill = "left") %>%
+  separate(Debito_aff, into = c("Debito_aff_Rem","Debito_aff_Rem2", "Debito_aff"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  separate(VISA, into = c("VISA_Rem", "VISA"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(VISA_aff, into = c("VISA_aff_Rem","VISA_aff_Rem2", "VISA_aff"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  separate(MCard, into = c("MCard_Rem", "MCard"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Amex, into = c("Amex_Rem", "Amex"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(dif_resid, into = c("dif_resid_Rem","dif_resid_Rem2", "dif_resid"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>% 
+  transform(sexo = ifelse(.$sexo == "No informado", "MUJER", "HOMBRE")) %>%
+  select(-c("Baja_Rem", "edatcat_Rem","edatcat_Rem2","edatcat_Rem3","Nomina_Rem","Pension_Rem","Debito_normal_Rem","Debito_normal_Rem2","Debito_aff_Rem","Debito_aff_Rem2","VISA_Rem","VISA_aff_Rem","VISA_aff_Rem2","MCard_Rem","Amex_Rem","dif_resid_Rem","dif_resid_Rem2"))
+
+#Comandos para la generación de training data, con 2/3 (67% aprox) de observaciones random
+n <- nrow(churn_tidy)
+set.seed(7)
+trainingdata <- sample(1:n,round(0.67*n))
+
+#Comandos para la generación del arbol CART
+set.seed(27)
+arbbaja <- rpart(Baja~.,data = churn_tidy[trainingdata,],control = rpart.control(cp=0.0001,xval = 10))
+printcp(arbbaja)
+```
+
+## 4.	Determine ahora el árbol óptimo y su valor del complexity parameter (cp). Diga cuales son las variables más importantes en la definición del árbol óptimo.
+```{r}
+plotcp(arbbaja)
+
+arbbaja$cptable <- as.data.frame(arbbaja$cptable)
+#Descubrir el index del arbol con menos calidad 
+indMenorXError <- which.min(arbbaja$cptable$xerror)
+
+#Grabar el registro en una nueva variable
+xerror <- arbbaja$cptable$xerror[indMenorXError]
+#Coger su respectiva standard variation
+sd <- arbbaja$cptable$xstd[indMenorXError]
+
+#A través de comando loop, descubrir el primer valor que es más pequeño que el XError + 1 standard deviation
+i=1
+while(arbbaja$cptable$xerror[i] > (xerror+sd))
+  i = i + 1
+
+#Valor de Complexity Parameter
+optimalTreeCP <- arbbaja$cptable$CP[i]
+optimalTreeCP
+
+#Considerando el valor de CP que hemos atribuido anteriormente, tenemos que descubrir las variables mas importantes
+p1 <- prune(arbbaja,cp = optimalTreeCP)
+barplot(p1$variable.importance)
+```
+R.: El arbol optimo que hemos obtenido es de numero 11 de la cptable con complexity parameter de 0.007541478.
+Las variables que han sido mas importantes en la definición del arbol optimo han sido Total_vista, dif_Libreta.
+
+## 5.	Represente gráficamente el árbol óptimo y liste sus reglas de decisión. 
+```{r}
+#Ambos plots representan graficamente el arbol optimo. En este ejercicio hemos elegido utilizar el fancyRpartPlot del paquete rattle
+#library(rpart.plot)
+#rpart.plot(p1)
+
+library(rattle)
+fancyRpartPlot(p1)
+
+asRules(p1)
+```
+
+## 6.	Las probabilidades de baja no están por fortuna equidistribuidas, sino que la probabilidad de baja es muy inferior (un 5%). Exporte a Excel la tabla de resultados por hoja y pondere estos resultados de acuerdo con las probabilidades a priori mencionadas. Obsérvese que en este caso no utilizamos una muestra test de validación del árbol obtenido (en general deberíamos obtener la predicción del árbol en una muestra independiente (test) y validar la calidad del árbol con los resultados obtenidos en esta muestra test).
+```{r}
+leaf <- subset(p1$frame, var=="<leaf>",select=c(n,yval2))
+numLeaf <- row.names(leaf)
+leaf <- data.frame(leaf$n, leaf$yval2)
+names(leaf) <- c("n_train","class_train","n1_train","n2_train","p1_train","p2_train","probnode_train")
+row.names(leaf) <- numLeaf
+leaf <- leaf[order(-leaf$p2_train),]
+
+leaf$cum_n1 <- cumsum(leaf$n1_train)/sum(leaf$n1_train)
+leaf$cum_n2 <- cumsum(leaf$n2_train)/sum(leaf$n2_train)
+leaf$dif_cum <- leaf$cum_n2 - leaf$cum_n1
+
+print(leaf)
+
+tab_results = data.frame(matrix(NA, nrow=nrow(leaf), ncol=4))
+row.names(tab_results) = row.names(leaf)
+tab_results[,1] = leaf$n_train + leaf$n_train
+tab_results[,2] = leaf$n1_train + leaf$n1_train
+tab_results[,3] = leaf$n2_train + leaf$n2_train
+tab_results[,4] = tab_results[,3]/tab_results[,1]
+names(tab_results) = c("n","n1","n2","p2")
+tab_results = tab_results[order(-tab_results$p2),]
+#print(leaf)
+
+Sys.setenv(JAVA_HOME='C:\\Program Files\\Java\\jdk1.8.0_231\\jre')
+library(xlsx)
+write.xlsx(tab_results, "tab_results.xlsx") 
+```
+
+
+## 7.	Obtenga gráficamente las curvas de concentración y ROC correspondientes.
+```{r}
+pred_learn <- as.data.frame(predict(p1, data=churn_tidy[trainingdata,],type="prob"))
+pred_test  <- as.data.frame(predict(p1, newdata=churn_tidy[-trainingdata,],type="prob"))
+
+library(ROCR)
+pred <- prediction(c(pred_learn$SI,pred_test$SI), c(churn_tidy$Baja[trainingdata],churn_tidy$Baja[-trainingdata]))
+con <- performance(pred,measure="tpr",x.measure="rpp")
+plot(con, main="Concentration curve")
+abline(0,1,col="blue")
+
+roc <- performance(pred,measure="tpr",x.measure="fpr")
+plot(roc, main="ROC curve")
+abline(0,1,col="blue")
+auc.tmp <- performance(pred,"auc")
+auc <- as.numeric(auc.tmp@y.values)
+
+#Valor del area entre la curva ROC y la linea diagonal
+auc
+```
+
+## 8.	Decida un umbral de decisión para la predicción de “baja” y obtenga el “error_rate”, la precisión en la predicción positiva, la precisión en la predicción negativa, el promedio de ambas precisiones y el Recall asociado al umbral escogido. 
+Resp.: Los resultados pueden ser vistos en el archivo adjunto "Exercise-CART-08-01-2020.xlsx"
