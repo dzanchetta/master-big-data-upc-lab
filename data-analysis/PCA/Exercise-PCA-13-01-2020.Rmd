@@ -1,0 +1,109 @@
+---
+title: "Exercise PCA Session 13-01-2020"
+author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1. Lea el fichero “churn.txt”. Razone si realizar un ACP con datos estandarizados o sin estandarizar.
+```{r}
+library(dplyr)
+library(tidyr)
+library(mice)
+
+setwd("C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Aula 8 - 08-01/exer_cart")
+churn <- read.table(file = "churn.txt",header = TRUE,sep = "")
+churn$antig[churn$antig==99] <- NA
+churn <- mice::complete(mice(churn, m=1))
+
+churn_tidy <- churn %>%
+  separate(Baja, into = c("Baja_Rem","Baja"), sep = " ", extra = "merge", fill = "left") %>% 
+  separate(edatcat, into = c("edatcat_Rem", "edatcat","edatcat_Rem2","edatcat_Rem3"), sep = "([\\ \\.\\.])", extra = "merge", fill = "right") %>%
+  separate(Nomina, into = c("Nomina_Rem", "Nomina"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Pension, into = c("Pension_Rem", "Pension"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Debito_normal, into = c("Debito_normal_Rem","Debito_normal_Rem2", "Debito_normal"), sep = "([\\ \\ ])", extra = "merge", fill = "left") %>%
+  separate(Debito_aff, into = c("Debito_aff_Rem","Debito_aff_Rem2", "Debito_aff"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  separate(VISA, into = c("VISA_Rem", "VISA"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(VISA_aff, into = c("VISA_aff_Rem","VISA_aff_Rem2", "VISA_aff"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>%
+  separate(MCard, into = c("MCard_Rem", "MCard"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(Amex, into = c("Amex_Rem", "Amex"), sep = " ", extra = "merge", fill = "left") %>%
+  separate(dif_resid, into = c("dif_resid_Rem","dif_resid_Rem2", "dif_resid"), sep = "([\\ \\. ])", extra = "merge", fill = "left") %>% 
+  transform(sexo = ifelse(.$sexo == "No informado", "MUJER", "HOMBRE")) %>%
+  select(-c("Baja_Rem", "edatcat_Rem","edatcat_Rem2","edatcat_Rem3","Nomina_Rem","Pension_Rem","Debito_normal_Rem","Debito_normal_Rem2","Debito_aff_Rem","Debito_aff_Rem2","VISA_Rem","VISA_aff_Rem","VISA_aff_Rem2","MCard_Rem","Amex_Rem","dif_resid_Rem","dif_resid_Rem2"))
+```
+Resp.: Vamos a optar por no realizar la estandarización de los datos de las 5 variables activas (Total_activo, Total_plazo, Total_inversion, Total_Seguros y Total_Vista) pues nuestra asunción es de que estas variables estan medidas en las mismas unidades, que en este caso es unidad monetaria.
+
+## 2. Efectúe un Análisis de Componentes Principales tomando como variables activas los productos bancarios antes especificados. Declare como ilustrativos los clientes que se dieron de baja (de esta forma la configuración obtenida reflejará la de los clientes “normales”).
+```{r}
+library(FactoMineR)
+
+#Función PCA, utilizando el scale.unit = FALSE pues hemos elegido no estandarizar las variables activas. Tambien estamos utilizando como suplementarios para test los individuos con Baja SI
+pca.churn <- PCA(churn_tidy,quanti.sup = c(4,19:30),quali.sup = c(1:3,5:12,18),ind.sup = (1001:2000),scale.unit = FALSE)
+```
+
+## 3. Obtenga la representación gráfica del ”Screeplot” (diagrama de los “eigenvalues”) y a la vista de las correlaciones entre las variables originales y las componentes principales, decida el número de dimensiones significativas. ¿Cuál es el porcentaje de variancia retenido?
+```{r}
+pca.churn$eig
+
+#Grafico Screeplot
+plot(pca.churn$eig[,1],type="l",main="Screeplot")
+
+#Proyección de individuos con los componentes principales
+pca.churn$var$cor[,1:3]
+```
+
+R.: Numero de Dimensiones es igual a 3. Porcentaje de variancia retenido entre los dos componentes es de 91.62% de la nube original.
+
+## 4. Efectúe una rotación “varimax” para hacer más evidente los factores latentes (intangibles) presentes en sus datos activos. ¿Cuáles son en este caso estos factores latentes?. (La rotación tendrá más o menos sentido en función de si se ha optado por realizar un ACP con los datos estandarizados o no).
+```{r}
+nd <- 3
+pca.rotation <- varimax(pca.churn$var$cor[,1:nd])
+pca.rotation$loadings
+```
+Resp.: Los factores latentes para cada dimensión son los siguientes:
+Dimensión 1 -> Total Inversion
+Dimensión 2 -> Total Plazo
+Dimensión 3 -> Total activo
+Es decir, los factores tanto en relación a Inversión que tienen los individuos y sus Depositos (totales de activos y totales plazo) son significativos y estan correlacionados con las bajas de estos individuos.
+
+## 5. Represente gráficamente la nube de puntos individuo activos. Sobre esta nube proyecte los individuos suplementarios. ¿Piensa Ud. que la configuración de los clientes que han sido baja es distinta de la de los clientes que no han sido baja?
+```{r}
+library(factoextra)
+
+fviz_pca_ind(pca.churn, geom.ind = "point", 
+             col.ind = "red",
+             col.ind.sup = "blue",
+             axes = c(1, 2),
+             title = "Plot of individuals",
+             label = "quali",
+             pointsize = 1.5)
+```
+Resp.: Nuestra conclusión es que no es diferente su configuración.
+
+## 6. Calcule el centroide (=punto medio) de los clientes que han sido baja en las componentes principales retenidas en la pregunta 3. A partir de la fórmula, calcule el v.test (= test value) del centroide de los clientes que han sido baja y diga si este centroide ocupa una posición significativamente distinta de los clientes “no baja”, en cada una de las componentes principales retenidas.
+```{r}
+n <- nrow(churn_tidy)
+nsup <- nrow(pca.churn$ind.sup$coord)
+
+psisupdim1 <- mean(pca.churn$ind.sup$coord[,1])
+psisupdim2 <- mean(pca.churn$ind.sup$coord[,2])
+psisupdim3 <- mean(pca.churn$ind.sup$coord[,3])
+
+psiactdim1 <- mean(pca.churn$ind$coord[,1])
+psiactdim2 <- mean(pca.churn$ind$coord[,2])
+psiactdim3 <- mean(pca.churn$ind$coord[,3])
+
+lambda1 <- pca.churn$eig[1,1]
+lambda2 <- pca.churn$eig[2,1]
+lambda3 <- pca.churn$eig[3,1]
+
+v.testdim1 <- (psisupdim1-psiactdim1)/sqrt((1-(nsup/n))*(lambda1/nsup))
+v.testdim1
+vtestdim2 <-  (psisupdim2-psiactdim2)/sqrt((1-(nsup/n))*(lambda2/nsup))
+vtestdim2
+vtestdim3 <-  (psisupdim3-psiactdim3)/sqrt((1-(nsup/n))*(lambda3/nsup))
+vtestdim3
+```
