@@ -1,0 +1,29 @@
+---
+title: "Exercise Clustering 15-01-2020"
+author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## 1.	Con las componentes principales halladas significativas, efectúe una Clasificación Ascendente Jerárquica por el método de Ward. Explique en qué consiste el método de agregación de Ward?. Represente el dendrograma (o árbol jerárquico) obtenido. 
+```{r}
+#Considerando el PCA de churn realizado en la clase del 13-01
+nd <- 3
+Psi <- pca.churn$ind$coord[,1:nd]
+
+matrixdistancia <- dist(Psi)
+
+cluster.churn <- hclust(matrixdistancia,method="ward.D2")
+
+plot(cluster.churn,cex=0.2)
+```
+Resp.: El metodo de agregación Ward consiste en calcular la distancia entre (dos) centros gravitaciones evitando la perda de información que esta agregación pueda generar.
+
+## 2.	A la vista del diagrama de barras del índice de nivel de las últimas agregaciones efectuadas, decida el número de clases de clientes diferentes que existen en los datos analizados. 
+```{r}
+#Barplot con los individuos activos
+barplot(cluster.churn$height[(nrow(Psi)-30):(nrow(Psi)-1)])
+```

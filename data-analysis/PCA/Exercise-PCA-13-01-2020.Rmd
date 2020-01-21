@@ -92,18 +92,20 @@ psisupdim1 <- mean(pca.churn$ind.sup$coord[,1])
 psisupdim2 <- mean(pca.churn$ind.sup$coord[,2])
 psisupdim3 <- mean(pca.churn$ind.sup$coord[,3])
 
-psiactdim1 <- mean(pca.churn$ind$coord[,1])
-psiactdim2 <- mean(pca.churn$ind$coord[,2])
-psiactdim3 <- mean(pca.churn$ind$coord[,3])
-
 lambda1 <- pca.churn$eig[1,1]
 lambda2 <- pca.churn$eig[2,1]
 lambda3 <- pca.churn$eig[3,1]
 
-v.testdim1 <- (psisupdim1-psiactdim1)/sqrt((1-(nsup/n))*(lambda1/nsup))
+v.testdim1 <- (psisupdim1)/sqrt((1-(nsup/n))*(lambda1/nsup))
 v.testdim1
-vtestdim2 <-  (psisupdim2-psiactdim2)/sqrt((1-(nsup/n))*(lambda2/nsup))
+vtestdim2 <-  (psisupdim2)/sqrt((1-(nsup/n))*(lambda2/nsup))
 vtestdim2
-vtestdim3 <-  (psisupdim3-psiactdim3)/sqrt((1-(nsup/n))*(lambda3/nsup))
+vtestdim3 <-  (psisupdim3)/sqrt((1-(nsup/n))*(lambda3/nsup))
 vtestdim3
 ```
+Resp.: Teniendo en cuenta las dimensiones encontradas en enunciado 4 (abajo):
+Dimensión 1 -> Total Inversion
+Dimensión 2 -> Total Plazo
+Dimensión 3 -> Total activo
+Y basandonos por el v.test resultado, hemos percibido que todas las dimensiones representan  una diferencia significativa entre los individuos que han sido Baja, de los activos (que no han sido baja), siendo lo de Dimensión 2 (Total Plazo) la que es mas representativa, seguida por el Total activo. En relación a total de inversión, aunque hemos notado un valor de v.test alto de los Baja para lo de no Bajas, no ha sido tan expresivo cuanto las demas dimensiones.
+Con esto, en nuestra analisis vimos que los individuos que son baja NO se comportan de igual forma que los individuos que no son baja, cuanto es considerado los productos bancario en cuestión.
