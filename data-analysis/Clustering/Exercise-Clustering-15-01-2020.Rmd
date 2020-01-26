@@ -27,3 +27,45 @@ Resp.: El metodo de agregación Ward consiste en calcular la distancia entre (do
 #Barplot con los individuos activos
 barplot(cluster.churn$height[(nrow(Psi)-30):(nrow(Psi)-1)])
 ```
+Resp.: Basados en el diagrama de barras, hemos decidido que el número de clases de cliente diferentes que existen en los datos analizados seria de 5 clases.
+
+## 3.	Obtenga la partición del árbol jerárquico en el número de clases finales deseado. Diga el número de clientes por “cluster”, y calcule el centro de gravedad de los clusters obtenidos.
+```{r}
+nc <- 5
+# Corte del árbol considerando el número de clases obtenidas en el ejercicio anterior
+arbol.clas5 <- cutree(cluster.churn,nc)
+
+# Número de clientes por clase ("cluster")
+numclient.class <- table(arbol.clas5)
+numclient.class
+
+# Centro de gravedad de los clusteres obtenidos
+cdg <- aggregate(as.data.frame(Psi),list(arbol.clas5),mean)[,2:(nd+1)]
+cdg
+
+# Calidad del árbol jerárquico
+
+Bss <- sum(rowSums(cdg^2)*as.numeric(table(arbol.clas5)))
+Tss <- sum(Psi^2)
+
+100*Bss/Tss
+```
+
+## 4.	En qué consiste la operación de consolidación de una partición obtenida por corte del árbol jerárquico. Efectúe esta operación en la partición obtenida en el apartado 3 anterior. Diga el número de clientes en las clases finales obtenidas.
+```{r}
+# Consolidación con centros iniciales en los centroides
+consol.kmeans <- kmeans(Psi,centers=cdg)
+
+# Número de clientes por clase final obtenida
+consol.kmeans$size
+```
+Resp.: Consiste en identificar/ reevaluar los individuos para agruparlos en el centro de gravedad que esté mas cercano. Así se hace una consolidación. Este proceso es para solventar el problema de valores solapantes.
+
+## 5.	Represente la partición final obtenida en el primer gráfico factorial, distinguiendo con colores diferentes cada una de las clases de clientes detectados. 
+
+```{r}
+plot(Psi[,1],Psi[,2],type="n",main="Clustering of clients in 5 classes")
+text(Psi[,1],Psi[,2],col=consol.kmeans$cluster,labels=row.names(churn_tidy),cex = 0.6)
+abline(h=0,v=0,col="gray")
+legend("topleft",c("c1","c2","c3","c4","c5"),pch=20,col=c(1:5))
+```
