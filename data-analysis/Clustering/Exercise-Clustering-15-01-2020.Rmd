@@ -27,25 +27,25 @@ Resp.: El metodo de agregación Ward consiste en calcular la distancia entre (do
 #Barplot con los individuos activos
 barplot(cluster.churn$height[(nrow(Psi)-30):(nrow(Psi)-1)])
 ```
-Resp.: Basados en el diagrama de barras, hemos decidido que el número de clases de cliente diferentes que existen en los datos analizados seria de 5 clases.
+Resp.: Basados en el diagrama de barras, hemos decidido que el número de clases de cliente diferentes que existen en los datos analizados seria de 3 clases.
 
 ## 3.	Obtenga la partición del árbol jerárquico en el número de clases finales deseado. Diga el número de clientes por “cluster”, y calcule el centro de gravedad de los clusters obtenidos.
 ```{r}
-nc <- 5
+nc <- 3
 # Corte del árbol considerando el número de clases obtenidas en el ejercicio anterior
-arbol.clas5 <- cutree(cluster.churn,nc)
+arbol.clas3 <- cutree(cluster.churn,nc)
 
 # Número de clientes por clase ("cluster")
-numclient.class <- table(arbol.clas5)
+numclient.class <- table(arbol.clas3)
 numclient.class
 
 # Centro de gravedad de los clusteres obtenidos
-cdg <- aggregate(as.data.frame(Psi),list(arbol.clas5),mean)[,2:(nd+1)]
+cdg <- aggregate(as.data.frame(Psi),list(arbol.clas3),mean)[,2:(nd+1)]
 cdg
 
 # Calidad del árbol jerárquico
 
-Bss <- sum(rowSums(cdg^2)*as.numeric(table(arbol.clas5)))
+Bss <- sum(rowSums(cdg^2)*as.numeric(table(arbol.clas3)))
 Tss <- sum(Psi^2)
 
 100*Bss/Tss
@@ -62,10 +62,40 @@ consol.kmeans$size
 Resp.: Consiste en identificar/ reevaluar los individuos para agruparlos en el centro de gravedad que esté mas cercano. Así se hace una consolidación. Este proceso es para solventar el problema de valores solapantes.
 
 ## 5.	Represente la partición final obtenida en el primer gráfico factorial, distinguiendo con colores diferentes cada una de las clases de clientes detectados. 
-
 ```{r}
-plot(Psi[,1],Psi[,2],type="n",main="Clustering of clients in 5 classes")
+plot(Psi[,1],Psi[,2],type="n",main="Clustering of clients in 3 classes")
 text(Psi[,1],Psi[,2],col=consol.kmeans$cluster,labels=row.names(churn_tidy),cex = 0.6)
 abline(h=0,v=0,col="gray")
-legend("topleft",c("c1","c2","c3","c4","c5"),pch=20,col=c(1:5))
+legend("topleft",c("c1","c2","c3"),pch=20,col=c(1:nc))
+```
+
+## 6.	Interpretamos las clases finales obtenidas. Para ello utilizamos la función “catdes” de R. Primero damos las características significativas de cada clase (identificada como "1" la primera clase por ejemplo) para las variables continuas (=quanti) (por ejemplo quanti$´1´ se refiere a las características significativas de las variables continuas en la primera clase). Después aparecen las modalidades (=category) significativas de las variables categóricas en cada una de las clases. Interprete y de un nombre a cada una de los tipos de cliente identificados.
+```{r}
+# Descripción de las 3 clases finales obtenidas
+library(FactoMineR)
+result <- catdes(cbind(as.factor(consol.kmeans$cluster),churn_tidy),num.var=1,proba=0.001)
+
+# Caracteristicas significativas de cada una de las 3 clases
+result$quanti
+result$category
+
+# Clase 1
+result$quanti$`1`
+result$category$`1`
+
+# Clase 2
+result$quanti$`2`
+result$category$`2`
+
+# Clase 3
+result$quanti$`3`
+result$category$`3`
+```
+Res.:
+## 7.	Efectúe ahora la asignación de los clientes que han sido baja en la tipología de clientes anterior (utilice para ello la función knn1 de la librería class). 
+```{r}
+library(class)
+nd <- 3
+client.result <- knn1(consol.kmeans$centers, pca.churn$ind.sup$coord[,1:nd], cl=c("c1","c2","c3"))
+client.result
 ```
