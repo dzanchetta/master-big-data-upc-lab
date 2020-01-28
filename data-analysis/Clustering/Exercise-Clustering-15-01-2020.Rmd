@@ -73,7 +73,7 @@ legend("topleft",c("c1","c2","c3"),pch=20,col=c(1:nc))
 ```{r}
 # Descripción de las 3 clases finales obtenidas
 library(FactoMineR)
-result <- catdes(cbind(as.factor(consol.kmeans$cluster),churn_tidy),num.var=1,proba=0.001)
+result <- catdes(cbind(as.factor(consol.kmeans$cluster),churn_tidy),num.var=1)
 
 # Caracteristicas significativas de cada una de las 3 clases
 result$quanti
@@ -91,7 +91,11 @@ result$category$`2`
 result$quanti$`3`
 result$category$`3`
 ```
-Res.:
+Resp.: Interpretación de las Clases obtenidas 
+Cluster 1 (Jovenes): es de jovenes activos (grupo de personas no pensionistas);
+Cluster 2 (Mas riqueza/Mejores clientes): Personas con mas edad, y con signiticativa cantidad en Total Plazo, que pueden recibir invitación de otros bancos
+Cluster 3 (Inversores): Grupo de personas activa en el tema de inversiones
+
 ## 7.	Efectúe ahora la asignación de los clientes que han sido baja en la tipología de clientes anterior (utilice para ello la función knn1 de la librería class). 
 ```{r}
 library(class)
@@ -99,3 +103,21 @@ nd <- 3
 client.result <- knn1(consol.kmeans$centers, pca.churn$ind.sup$coord[,1:nd], cl=c("c1","c2","c3"))
 client.result
 ```
+
+## 8.	Represente gráficamente (función barplot) la proporción de clientes en cada una de las clases, tanto los clientes “normales”, como los que han sido baja. ¿Podemos deducir que algunos clusters tienen un riesgo de baja mayor que otros?
+```{r}
+#consol.mean$size es la cantidad de clientes "normales" por Cluster. El client.result es el resultado del knn1 de los Individuos de Baja.
+
+Xtot <- rbind(consol.kmeans$size,table(client.result))
+library(dplyr)
+barplot(Xtot,
+        main = "Proporción de Clientes en cada Clase", 
+        xlab = "Clase",
+        ylab = "Numero de Clientes", 
+        col = c("darkblue","red"),
+        legend.text = c("Normales","Baja"), 
+        beside = TRUE,
+        ylim = c(0,1000))
+```
+
+Resp.: Con el barplot dibujado podemos deducir que los clientes en los Clusters 2 y 3 tienen mas probabilidad de Baja, siendo es mas considerable cliente en el Cluster 2.
