@@ -1,0 +1,129 @@
+---
+title: "ML_Association_Rules_Exercise01"
+author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
+date: "18/02/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+### Version de resumen de las Reglas de Asociación interesantes encontradad
+1) {bottled beer,red/blush wine}	=>	{liquor}
+2) {tropical fruit,whole milk,yogurt}	=>	{root vegetables}
+3) {onions,whole milk}	=>	{root vegetables}
+4) {beef,rolls/buns}	=>	{root vegetables}
+5) {hamburger meat,yogurt,whipped/sour cream}	=>	{butter}
+6) {pip fruit,whole milk,yogurt,frozen meals}	=>	{tropical fruit}
+7) {root vegetables,whole milk,flour} => {whipped/sour cream}
+8) {sausage}	=>	{bread and backed goods}
+9) {bread and backed goods,fruit}	=>	{dairy produce}
+10) {sausage*}	=>	{bread and backed goods*}
+
+### Versión más detallada de los pasos transcurridos
+```{r}
+library (arules)
+library (arulesViz)
+
+data ("Groceries")
+summary(Groceries)
+```
+
+Lo primero que hemos hecho despues de cargar la transaccion de Groceries, ha sido aplicar un Summary y alli descubrimos que los items que estaban siendo presentados con más frecuencia eran:
+-whole milk
+-other vegetables
+-rolls/buns
+-soda
+-yogurt
+
+Para demostrar esta frecuancia de determinados items, hemos hecho un plot de frecuencia de los 20 items, que sale en orden descendente:
+
+```{r}
+itemFrequencyPlot(Groceries,topN=30)
+```
+
+
+```{r}
+groceries.rules <- apriori(Groceries, parameter = list(support=0.005, confidence=0.3,minlen=2),control=list(verbose=F))
+groceries.rules.sortedlift <- sort(groceries.rules,by="lift") 
+groceries.rules.sortedlift <- groceries.rules.sortedlift[!is.redundant(groceries.rules.sortedlift)]
+inspect(groceries.rules.sortedlift[1:10])
+```
+En un primer intento para encontrar las reglas, hemos llegado a algunas reglas con un valor de lift bastante significativo, una que nos llamó la impresión por su lift de 35.71 ha sido de {bottled beer,red/blush wine}	=>	{liquor}, con la cual añadimos a nuestra de reglas interesantes. Para llegar hasta ahi utilizamos support de 0.001 y confidence de 0.3.
+Sin embargo, en general, que no nos han interesado demasiado pues han parecido reglas un poco obvias. Mismo cuando cambiamos el support a 0.005. Un ejemplo en concreto es de las reglas [2] {herbs}	=>	{root vegetables}.
+También nos ha dado la impresión que hay valores comunes que podrían ser quitados del algoritmo apriori ("other vegetables" y "shopping bags"), con la intención de intentar obtener reglas mas interesantes.
+
+```{r}
+
+groceries.rules.filtered <- apriori(Groceries, parameter=list(support=0.001,confidence = 0.55,minlen=4,maxlen=5),appearance = list(none=c("other vegetables","shopping bags")),control=list(verbose=F))
+groceries.rules.filtered.sorted <- sort(groceries.rules.filtered,by="lift")
+groceries.rules.filtered.sorted <- groceries.rules.filtered.sorted[!is.redundant(groceries.rules.filtered.sorted)]
+inspect(groceries.rules.filtered.sorted[1:10])
+```
+Por lo tanto, ha sido esto que hicimos, lo primero que intentamos ha sido jugar con un support de 0.001,  confidence a 0.55, minimo de LHS a 4 y maximo a 5. Nos ha sorprendido la regla {hamburger meat,yogurt,whipped/sour cream}	=>	{butter}, principalmente por su lift de 11.27.
+
+Enseguida, cambiamos support a 0.005, confidence a 0.3, y minimo de LHS a 2. En el resultado ya empezaran a venir en repetidas combinaciones "whole milk" en los LHS, por lo tanto lo que nos parece un item más general. También hemos percibido RHS de "root vegetables" con un lift bastante elevado. Entonces, lo siguiente que hicimos ha sido centrarnos en los "root vegetables":
+
+```{r}
+root.vegetables.rule <- sort(subset(groceries.rules.filtered.sorted, rhs %in% "root vegetables"), by="lift")
+inspect(root.vegetables.rule)
+```
+Con el resultado seleccionamos algunas reglas que han parecido interesantes:
+{tropical fruit,whole milk,yogurt}	=>	{root vegetables} --> esta parece involucrar muchos items de quien va para hacer compras para una familia
+{onions,whole milk}	=>	{root vegetables}
+{beef,rolls/buns}	=>	{root vegetables}
+
+Lo siguiente que hicimos ha sido de continuar en el focalizar en algunos RHS que parecian interesantes, como "tropical fruit":
+```{r}
+tropical.fruit.rule <- sort(subset(groceries.rules.filtered.sorted, rhs %in% "tropical fruit"), by="lift")
+inspect(head(tropical.fruit.rule,5))
+```
+Del resultado consideramos: {pip fruit,whole milk,yogurt,frozen meals}	=>	{tropical fruit}
+Ha sido ahora la vez de mirar el RHS yogurt, y vemos por primera vez en los LHS "pork", no obstante no es una regla que nos ha interesado de todo: {pork,tropical fruit,fruit/vegetable juice}	=>	{yogurt}
+```{r}
+yogurt.rule <- sort(subset(groceries.rules.filtered.sorted, rhs %in% "yogurt"), by="lift")
+inspect(head(yogurt.rule,10))
+```
+
+```{r}
+root.vegetables.rule <- sort(subset(groceries.rules.filtered.sorted, lhs %in% "root vegetables" & lift > 3), by="lift")
+inspect(root.vegetables.rule[1:10])
+```
+El siguiente que hicimos ha sido de regenerar reglas, pero ahora considerando un LHS que habia salido en otras reglas: "root vegetables". Quedamos con esta regla de interesante: {root vegetables,whole milk,flour} => {whipped/sour cream}.
+
+Abajo analizamos algunos graficos con algunos items que vimos durante la analisis.
+```{r}
+#plot for root vegetables
+plot(root.vegetables.rule,method="graph",engine="htmlwidget")
+
+#plot for yogurt - otra manera de hacer el plot
+plot(yogurt.rule[1:10],method="graph",interactive=FALSE,shading="lift")
+title(main = "Yogurt")
+```
+
+También hemos agregado los items de groceries por level2, que nos es dado con grupos como por ejemplo:
+-sausage
+-vegetables
+-poultry
+-beef
+-fruit
+-fish
+-cheese
+-dairy produce
+```{r}
+#Aggregating by level2, found in itemInfo
+#itemInfo(Groceries)
+groceries_level_2 <- aggregate(Groceries, by="level2")
+groceries.rules.level2 <- apriori(groceries_level_2,parameter=list(support=0.07, confidence=0.5,minlen=2))
+inspect(groceries.rules.level2)
+
+groceries_level_3 <- addAggregate(Groceries, by="level2")
+groceries.rules.level3 <- apriori(groceries_level_3,parameter=list(support=0.1, confidence=0.3,minlen=2))
+multirules <- filterAggregate(groceries.rules.level3)
+inspect(head(multirules, by = "lift"))
+```
+La regla {sausage}	=>	{bread and backed goods} nos ha parecido interesante. Hemos notado que con un support de 0.07 y confidence de 0.5 los valores de lift van más proximos a 1 en relación a los valores que habiamos encontrados en las ejecuciones anteriores.
+Aun sobre los mismos parametros, la siguiente regla pueden ser de personas que les gusten a desayunos variados:
+{bread and backed goods,fruit}	=>	{dairy produce}
+
+Por fin, intentamos a través de la analisis Multi-level, para analizar la relacón de items individuales con items de grupo, y considerando un support de 0.1 y confidence de 0.3. La regla que nos ha parecido interesado ha sido la {sausage*}	=>	{bread and backed goods*}.
