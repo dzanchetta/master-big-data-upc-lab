@@ -39,7 +39,7 @@ Lo primero que hemos hecho despues de cargar la transaccion de Groceries, ha sid
 Para demostrar esta frecuancia de determinados items, hemos hecho un plot de frecuencia de los 20 items, que sale en orden descendente:
 
 ```{r}
-itemFrequencyPlot(Groceries,topN=30)
+itemFrequencyPlot(Groceries,topN=20)
 ```
 
 
@@ -94,7 +94,7 @@ El siguiente que hicimos ha sido de regenerar reglas, pero ahora considerando un
 Abajo analizamos algunos graficos con algunos items que vimos durante la analisis.
 ```{r}
 #plot for root vegetables
-plot(root.vegetables.rule,method="graph",engine="htmlwidget")
+plot(root.vegetables.rule,method="graph",interactive=FALSE,shading="lift")
 
 #plot for yogurt - otra manera de hacer el plot
 plot(yogurt.rule[1:10],method="graph",interactive=FALSE,shading="lift")
