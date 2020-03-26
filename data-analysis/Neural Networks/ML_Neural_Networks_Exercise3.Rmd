@@ -1,0 +1,429 @@
+---
+title: "ML Neural Networks Exercise3"
+author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
+date: "16/03/2020"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Parte 1) Predicción sobre los datos Musk utilizando:
+
+### Multinom con nnet
+### MultiLayer Perceptron con Keras: Probad a modificar el learning rate (lr para RMSProp) y el número de capas que le ponéis (con sus número de neuronas)
+
+```{r}
+#Pre-proceso
+library(dplyr)
+library(tidyr)
+
+#Leer fichero y eliminar las dos primeras variables
+musk <- read.table(file.choose(),sep = ",") %>%
+musk <- musk[,3:169]
+
+colnames(musk) <- c('f1','f2','f3','f4','f5','f6','f7','f8','f9','f10','f11','f12','f13','f14','f15','f16','f17','f18','f19','f20','f21','f22','f23','f24','f25','f26','f27','f28','f29','f30','f31','f32','f33','f34','f35','f36','f37','f38','f39','f40','f41','f42','f43','f44','f45','f46','f47','f48','f49','f50','f51','f52','f53','f54','f55','f56','f57','f58','f59','f60','f61','f62','f63','f64','f65','f66','f67','f68','f69','f70','f71','f72','f73','f74','f75','f76','f77','f78','f79','f80','f81','f82','f83','f84','f85','f86','f87','f88','f89','f90','f91','f92','f93','f94','f95','f96','f97','f98','f99','f100','f101','f102','f103','f104','f105','f106','f107','f108','f109','f110','f111','f112','f113','f114','f115','f116','f117','f118','f119','f120','f121','f122','f123','f124','f125','f126','f127','f128','f129','f130','f131','f132','f133','f134','f135','f136','f137','f138','f139','f140','f141','f142','f143','f144','f145','f146','f147','f148','f149','f150','f151','f152','f153','f154','f155','f156','f157','f158','f159','f160','f161','f162','f163','f164','f165','f166', 'class')
+
+#Pasamos la variable class a factor
+musk$class <- as.factor(musk$class)
+
+#Eliminamos los registros duplicados
+musk <- musk[!duplicated(musk),]
+summary(musk)
+
+#Normalizamos las variables numericas utilizando el metodo scale y center
+musk <- musk %>% mutate_if(is.numeric, scale, center = T, scale = T)
+#summary(musk)
+
+#Para ver depois: pcaNNet
+library(caret)
+
+#Multinom con NNET
+set.seed(7)
+#Separamos Musk en Data Frame de training y testing, siendo que training contiene 70% de los registros
+tran_sample <- sample(seq_len(nrow(musk)), size = nrow(musk) * 0.7)
+train_musk   <- musk[tran_sample, ]
+test_musk    <- musk[-tran_sample, ]
+```
+
+Multinominal Regression:
+```{r}
+library(nnet)
+
+train_test_multinom <- function(lambda=0, epochs=100)
+{
+  multinom.model <- multinom (class ~ ., data=train_musk, maxit=epochs, decay=lambda)
+  
+  # Training error
+  multinom.train <- apply(multinom.model$fitted.values, 1, which.max)-1
+  
+  (multinom.train_ct <- table(Truth=train_musk$class, Pred=multinom.train))
+  cat("\n\nTraining error", (mean(as.character(multinom.train)!= as.character(train_musk$class))*100),"%\n")
+  
+  # Test error
+  multinom.test <- predict(multinom.model, test_musk)
+  
+  (multinom.test_ct <- table(Truth=test_musk$class, Pred=multinom.test))
+  cat("Test error", (mean(as.character(multinom.test) != as.character(test_musk$class))*100),"%\n")
+}
+
+train_test_multinom()
+#Training Error: 15.95% - Test Error: 5.06%
+train_test_multinom(lambda = 0.1,epochs = 300) #converge en la iteracción 140
+#Training Error: 15,95% - Test Error: 4,65%
+train_test_multinom(lambda = 0.001,epochs = 500) #converge en la iteracción 140
+#Training Error: 15,95% - Test Error: 5,01%
+```
+
+NNET:
+```{r}
+model.nnet <- nnet(class ~., data = train_musk, size=1, maxit=100, decay=0)
+
+#Attempt 1 con 1 hidden layer
+#Weigths
+model.nnet$wts
+#value of fitting criterion plus weight decay term.
+model.nnet$value
+sqrt(model.nnet$wts %*% model.nnet$wts)
+#1 if the maximum number of iterations was reached, otherwise 0.
+model.nnet$convergence
+
+#Training error for model.nnet2
+pred1 <- as.factor(predict(model.nnet, type="class"))
+cmatrix <- table(Truth=train_musk$class, Pred=pred1)
+(1-sum(diag(cmatrix))/sum(cmatrix))*100
+
+#Test error for model.nnet2 (1.11% de error en test!!!)
+pred2 <- as.factor(predict(model.nnet, newdata=test_musk, type="class"))
+cmatrix2 <- table(Truth=test_musk$class, Pred=pred2)
+(1-sum(diag(cmatrix2))/sum(cmatrix2))*100
+
+#Attempt 2 con 10 hidden layer
+model.nnet2 <- nnet(class ~., data = train_musk, size=10, maxit=100, decay=1,MaxNWts=2000)
+
+model.nnet2$value
+sqrt(model.nnet2$wts %*% model.nnet2$wts)
+
+#Training error for model.nnet2
+pred1 <- as.factor(predict(model.nnet2, type="class"))
+cmatrix <- table(Truth=train_musk$class, Pred=pred1)
+(1-sum(diag(cmatrix))/sum(cmatrix))*100
+
+#Test error for model.nnet2 (1.11% de error en test!!!)
+pred2 <- as.factor(predict(model.nnet2, newdata=test_musk, type="class"))
+cmatrix2 <- table(Truth=test_musk$class, Pred=pred2)
+(1-sum(diag(cmatrix2))/sum(cmatrix2))*100
+
+#Attempt 3 con 30 hidden layer y un maxit de 200 --> Esta attempt ha tardado muchisimo tiempo (bueno, cuestión de minutos)
+model.nnet3 <- nnet(class ~., data = train_musk, size=30, maxit=200, decay=1,MaxNWts=6000)
+
+model.nnet2$value
+sqrt(model.nnet3$wts %*% model.nnet3$wts)
+
+#Training error for model.nnet3 (0% de error en training, pero puede ser ilusiorio)
+pred1 <- as.factor(predict(model.nnet3, type="class"))
+cmatrix <- table(Truth=train_musk$class, Pred=pred1)
+(1-sum(diag(cmatrix))/sum(cmatrix))*100
+
+#Test error for model.nnet3 (0.5% de error en training, lo que es mucho mejor que el anterior, pero puede ser ilusorio)
+pred2 <- as.factor(predict(model.nnet3, newdata=test_musk, type="class"))
+cmatrix2 <- table(Truth=test_musk$class, Pred=pred2)
+(1-sum(diag(cmatrix2))/sum(cmatrix2))*100
+```
+
+KERAS:
+```{r}
+library(dplyr)
+library(keras)
+
+#### Pre-processing antes de ejecutar Keras ####
+#Train data and test data without class
+train_musk_x <- train_musk[, -167]
+test_musk_x <- test_musk[, -167]
+
+levels.class <- length(levels(train_musk$class))
+train_musk_y_num <- as.integer(train_musk$class)
+test_musk_y_num <- as.integer(test_musk$class)
+train_musk_y <- to_categorical(train_musk_y_num-1, levels.class)
+test_musk_y <- to_categorical(test_musk_y_num-1, levels.class)
+
+#Predictors transformados a matrix, pues Keras no funciona con data.frame
+matrix_train_musk <- as.matrix(train_musk_x)
+matrix_test_musk <- as.matrix(test_musk_x)
+
+#### Keras con 1 layer con Softmax y utilizando como función de activación el ReLU ####
+
+per <- keras_model_sequential()
+per %>% layer_dense(units = 128, activation = "relu",
+              input_shape = c(ncol(train_musk_x))) %>%
+        layer_dense(units = levels.class, activation = "softmax") #2 neuronas de output
+
+# Ahora compilamos con validation metric (loss function = binary_crossentropy) y un optimizador (accuracy)
+per %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy") #evaluación de lo buena que es la red neuronal
+)
+
+per
+
+# Entrenando el modelo de red neuronal con 1 layer --> 99.46%
+start.time <- Sys.time()
+history <- per %>% fit(
+  matrix_train_musk, train_musk_y,
+  epochs = 100, batch_size = 128, #epochs: numero de passadas no dataset
+  validation_split = 0.2
+)
+per_time <- Sys.time() - start.time
+print(per_time)
+
+plot(history)
+history
+
+#Probar el modelo --> 99.19%
+per_test <- per %>% evaluate(matrix_test_musk, test_musk_y)
+per_test
+
+#### Keras con 3 layers y 1 neurona con Softmax y utilizando como función de activación el ReLU ####
+
+per2 <- keras_model_sequential()
+per2 %>% layer_dense(units = 64, activation = "relu",
+              input_shape = c(ncol(train_musk_x))) %>%
+        layer_dense(units = 32, activation = "relu") %>%
+        layer_dense(units = 16, activation = "relu") %>%
+        layer_dense(units = levels.class, activation = "softmax") #2 neuronas de output
+
+# Ahora compilamos con validation metric (loss function = binary_crossentropy) y un optimizador (accuracy)
+per2 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy") #evaluación de lo buena que es la red neuronal
+)
+
+per2
+
+# Entrenando el modelo de red neuronal con 1 layer --> 99.13%
+start.time <- Sys.time()
+history2 <- per2 %>% fit(
+  matrix_train_musk, train_musk_y,
+  epochs = 100, batch_size = 128, #epochs: numero de passadas no dataset
+  validation_split = 0.2
+)
+per_time2 <- Sys.time() - start.time
+print(per_time2)
+
+plot(history2)
+history2
+
+#Probar el modelo --> 99.29%
+per_test2 <- per2 %>% evaluate(matrix_test_musk, test_musk_y)
+per_test2
+
+#### Keras con 1 layer con Sigmoid y utilizando como función de activación el ReLU ####
+
+per3 <- keras_model_sequential()
+per3 %>% layer_dense(units = 128, activation = "relu",
+              input_shape = c(ncol(train_musk_x))) %>%
+        layer_dense(units = levels.class, activation = "sigmoid") #2 neuronas de output
+
+# Ahora compilamos con validation metric (loss function = binary_crossentropy) y un optimizador (accuracy)
+per3 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy") #evaluación de lo buena que es la red neuronal
+)
+
+per3
+
+# Entrenando el modelo de red neuronal con 1 layer --> 99.35%
+start.time <- Sys.time()
+history3 <- per3 %>% fit(
+  matrix_train_musk, train_musk_y,
+  epochs = 100, batch_size = 128, #epochs: numero de passadas no dataset
+  validation_split = 0.2
+)
+per_time3 <- Sys.time() - start.time
+print(per_time3)
+
+plot(history3)
+history3
+
+#Probar el modelo --> 99.22%
+per_test3 <- per3 %>% evaluate(matrix_test_musk, test_musk_y)
+per_test3
+
+#### Keras con 3 layers y 1 neurona con Sigmoid y utilizando como función de activación el ReLU ####
+
+per4 <- keras_model_sequential()
+per4 %>% layer_dense(units = 64, activation = "relu",
+              input_shape = c(ncol(train_musk_x))) %>%
+        layer_dense(units = 32, activation = "relu") %>%
+        layer_dense(units = 16, activation = "relu") %>%
+        layer_dense(units = levels.class, activation = "sigmoid") #2 neuronas de output
+
+# Ahora compilamos con validation metric (loss function = binary_crossentropy) y un optimizador (accuracy)
+per4 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy") #evaluación de lo buena que es la red neuronal
+)
+
+per4
+
+# Entrenando el modelo de red neuronal con 1 layer --> 99.40%
+start.time <- Sys.time()
+history4 <- per4 %>% fit(
+  matrix_train_musk, train_musk_y,
+  epochs = 100, batch_size = 128, #epochs: numero de passadas no dataset
+  validation_split = 0.2
+)
+per_time4 <- Sys.time() - start.time
+print(per_time4)
+
+plot(history4)
+history4
+
+#Probar el modelo --> 99.24%
+per_test4 <- per4 %>% evaluate(matrix_test_musk, test_musk_y)
+per_test4
+
+#### Keras con 5 layers y 1 neurona con Sigmoid y utilizando como función de activación el ReLU ####
+
+per5 <- keras_model_sequential()
+per5 %>% layer_dense(units = 128, activation = "relu",
+              input_shape = c(ncol(train_musk_x))) %>%
+        layer_dense(units = 64, activation = "relu") %>%
+        layer_dense(units = 32,activation = "relu") %>%
+        layer_dense(units = 16,activation = "relu") %>%
+        layer_dense(units = 8, activation = "relu") %>%
+        layer_dense(units = levels.class, activation = "sigmoid") #2 neuronas de output
+
+# Ahora compilamos con validation metric (loss function = binary_crossentropy) y un optimizador (accuracy)
+per5 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy") #evaluación de lo buena que es la red neuronal
+)
+
+per5
+
+# Entrenando el modelo de red neuronal con 1 layer --> 99.02%
+start.time <- Sys.time()
+history5 <- per5 %>% fit(
+  matrix_train_musk, train_musk_y,
+  epochs = 100, batch_size = 128, #epochs: numero de passadas no dataset
+  validation_split = 0.2
+)
+per_time5 <- Sys.time() - start.time
+print(per_time5)
+
+plot(history5)
+history5
+
+#Probar el modelo --> 98.66%
+per_test5 <- per5 %>% evaluate(matrix_test_musk, test_musk_y)
+per_test5
+
+#### Keras con 4 layers y 1 neurona con Sigmoid y utilizando como función de activación el ReLU ####
+
+per6 <- keras_model_sequential()
+per6 %>% layer_dense(units = 128, activation = "relu",
+              input_shape = c(ncol(train_musk_x))) %>%
+        layer_dense(units = 64, activation = "relu") %>%
+        layer_dense(units = 32,activation = "relu") %>%
+        layer_dense(units = 16,activation = "relu") %>%
+        layer_dense(units = levels.class, activation = "sigmoid") #2 neuronas de output
+
+# Ahora compilamos con validation metric (loss function = binary_crossentropy) y un optimizador (accuracy)
+per6 %>% compile(
+  loss = "binary_crossentropy",
+  optimizer = optimizer_rmsprop(), 
+  metrics = c("accuracy") #evaluación de lo buena que es la red neuronal
+)
+
+per6
+
+# Entrenando el modelo de red neuronal con 1 layer --> 99.02%
+start.time <- Sys.time()
+history6 <- per6 %>% fit(
+  matrix_train_musk, train_musk_y,
+  epochs = 100, batch_size = 128, #epochs: numero de passadas no dataset
+  validation_split = 0.2
+)
+per_time6 <- Sys.time() - start.time
+print(per_time6)
+
+plot(history6)
+history6
+
+#Probar el modelo --> 98.89%
+per_test6 <- per6 %>% evaluate(matrix_test_musk, test_musk_y)
+per_test6
+```
+
+Random Forest:
+```{r}
+library(randomForest)
+#Hemos decidido tambien probar con el random forest
+musk.randomf <- randomForest(class ~., data = train_musk, ntree = 200)
+
+pred_rf <- predict(musk.randomf, newdata=test_musk)
+confusion.matrix.rf <- table(test_musk$class, pred_rf)
+
+confusion.matrix.rf
+(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf))*100
+# El error ha sido de 2.43%, lo que es bastante bueno.
+```
+
+LDA y QDA:
+```{r}
+library(MASS)
+# 1.Aplicación del LDA
+musk.lda.learn <- lda(class ~ ., train_musk, CV = FALSE)
+musk.lda.train <- predict(musk.lda.learn,newdata=train_musk)
+
+#Calcular los errores de LDA y las predicciones en training y test data
+cat("LDA TRAINING ERROR:")
+(tab <- table(Truth=train_musk$class, Pred=musk.lda.train$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+
+musk.lda.test <- predict(musk.lda.learn, newdata=test_musk, type = "response")
+cat("TESTING ERROR:")
+(tab <- table(Truth=test_musk$class, Pred=musk.lda.test$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))  
+
+#Cross Validation Leave-one-out
+musk.lda.learn.loo <- lda(class ~ ., train_musk, CV = TRUE)
+(tab <- table(Truth=train_musk$class, Pred=musk.lda.learn.loo$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+
+musk.lda.test.loo <- lda(class ~ ., test_musk, CV = TRUE)
+(tab <- table(Truth=test_musk$class, Pred=musk.lda.test.loo$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+
+# 2.Quadratic Discriminant Analysis
+
+musk.qda.learn <- qda (class ~ ., train_musk, CV = FALSE)
+musk.qda.train <- predict(musk.qda.learn)
+
+#Calcular los errores de QDA y las predicciones en training y test data
+musk.qda.train <- predict(musk.qda.learn,newdata=train_musk)
+cat("QDA TRAINING ERROR:")
+(tab <- table(Truth=train_musk$class, Pred=musk.qda.train$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+
+musk.qda.test <- predict(musk.qda.learn, newdata=test_musk, type = "response")
+cat("QDA TEST ERROR:")
+(tab <- table(Truth=test_musk$class, Pred=musk.qda.test$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+
+#Cross validation Leave-one-out
+musk.qda.learn.loo <- qda(class ~ ., train_musk, CV = TRUE)
+(tab <- table(Truth=train_musk$class, Pred=musk.qda.learn.loo$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+
+musk.qda.test.loo <- qda(class ~ ., test_musk, CV = TRUE)
+(tab <- table(Truth=test_musk$class, Pred=musk.qda.test.loo$class))
+(error.LOOCV <- 100*(1-sum(tab[row(tab)==col(tab)])/sum(tab)))
+```
