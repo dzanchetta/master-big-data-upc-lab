@@ -1,0 +1,215 @@
+---
+title: "Exercise_ML_SVM&RF_PCA"
+author: "Daniel Ferreira Zanchetta and Lais Silva Almeida Zanchetta"
+date: "03/05/2020"
+output: word_document
+---
+## Pre-processing
+```{r}
+library(dplyr)
+library(tidyr)
+library(caret)
+
+#Leemos el fichero y eliminamos las dos primeras variables, siguiendo las recomendaciones en el Musk2.info
+musk <- read.table(file="C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Mathematical Foundations/Random Forest/Musk/Musk2.data",sep = ",") %>% select(-c(V1,V2))
+
+colnames(musk) <- c(paste0("f",1:166), "class")
+
+#PCA
+library(FactoMineR)
+pca.musk <- PCA(musk,quali.sup=167, scale.unit = TRUE)
+n = 25 #defino numero de componentes significativas
+pca.musk <- PCA(musk, ncp=n, quali.sup=167, scale.unit = TRUE)
+musk.pca <- (cbind(as.data.frame(pca.musk$ind$coord),musk[167]))
+
+musk <- musk.pca
+#Pasamos la variable class a factor
+musk$class <- as.factor(musk$class)
+#Normalizamos las variables numericas utilizando el metodo scale y center
+musk <- musk %>% mutate_if(is.numeric, scale, center = T, scale = T)
+
+
+set.seed(7)
+#Separamos Musk en Data Frame de training y testing, siendo que training contiene 70% de los registros
+#Intentamos con el createDataPartition del caret pero no nos ha servido pues no genera muestras aleatorias
+#tran_sample <- createDataPartition(y = musk$class, p= 0.7, list = FALSE)
+tran_sample <- sample(seq_len(nrow(musk)), size = nrow(musk) * 0.7)
+train_musk   <- musk[tran_sample, ] #[ELIMINAR] aqui estou pegando as linhas do arquivo original de acordo com as posiçoes aleatorias geradas em tran_sample 
+test_musk    <- musk[-tran_sample, ] #[ELIMINAR] aqui estou pegando as linhas que nao constam no vetor tran_sample
+```
+
+## SVM con Linear Kernel
+```{r}
+library(e1071)
+
+#Ahora utilizamos la función tune() que esta incluida en el paquete e1071, para realizar cross-validation. Por defecto tune() utiliza 10-fold cross-validation, lo que creemos que sea ideal para realizar este modelo (tunecontrol=tune.control(cross=10))
+set.seed(1)
+start.time <- Sys.time()
+tune.out <- tune(svm,class~., data = train_musk, type = 'C-classification', kernel = 'linear',ranges=list(cost=c(0.001, 0.01, 1, 1.5, 5, 10, 100)))
+(end.time <- Sys.time() - start.time) #21min
+
+#Ahora vamos a predecir con el mejor modelo
+(bestmodel.linear <- tune.out$best.model)
+summary(bestmodel)
+#590 support vector - 314 son 0 y 276 son 1
+
+pred <- predict(bestmodel.linear, newdata = test_musk,type="class", decision.values = TRUE)
+
+#Error 8.28%
+cm <- table(Truth=test_musk$class, Pred=pred)
+(1-sum(diag(cm))/sum(cm))*100
+```
+
+
+## SVM con Radial Kernel (Cost + Gamma)
+```{r}
+#El primer modelo de este bloque utilizamos cost = 1, y por defecto gamma es 0.5
+start.time <- Sys.time()
+modelSVMradial <- svm(class~., data = train_musk, type = 'C-classification', kernel = 'radial', cost=1, scale=FALSE)
+(end.time <- Sys.time() - start.time) #16.37 segundos
+
+summary(modelSVMradial) #Support vector: 794 - 465 son 0 y 329 son 1
+
+pred <- predict(modelSVMradial, newdata = test_musk,type="class", decision.values = TRUE)
+#Error de 3.13%
+cm <- table(Truth=test_musk$class, Pred=pred)
+(1-sum(diag(cm))/sum(cm))*100
+
+#Eligimos directamente en seguida probar distintos valores de C con Cross Validation utilizando la función tune()
+set.seed(1)
+start.time <- Sys.time()
+tune.out <- tune(svm,class~., data = train_musk, type = 'C-classification', kernel = 'radial',ranges=list(cost=c(0.001, 0.01, 1.5, 5, 10, 100)))
+(end.time <- Sys.time() - start.time) #19.10 minutos
+
+(bestmodel <- tune.out$best.model)
+summary(bestmodel) #Support vector: 573 - 379 son 0 y 194 son 1
+
+pred <- predict(bestmodel, newdata = test_musk,type="class", decision.values = TRUE)
+#Error 2.02%
+cm <- table(Truth=test_musk$class, Pred=pred)
+(1-sum(diag(cm))/sum(cm))*100
+
+#Ahora con el mejor C obtenido antes, probamos distintos valores de gamma, manteniendo cost fijo
+
+for (gamma in 2^seq(-3,4))
+{
+  cat("Starting model with gamma: ",gamma)
+  start.time <- Sys.time()
+  model.best.c.gamma <- svm(class~., data = train_musk, type = 'C-classification', kernel = 'radial', cost=100, gamma=gamma, scale = FALSE)
+  
+  (pred <- predict(model.best.c.gamma, newdata = test_musk,type="class", decision.values = TRUE))
+  cm <- table(Truth=test_musk$class, Pred=pred)
+  error <- (1-sum(diag(cm))/sum(cm))*100
+  
+  cat("Error for ",gamma,"is ", error,"\n")
+}
+(end.time <- Sys.time() - start.time) #12.39 mins
+
+#Starting model with gamma:  0.125 Error for  0.125 is  8.434343 
+#Starting model with gamma:  0.25 Error for  0.25 is  8.787879 
+#Starting model with gamma:  0.5 Error for  0.5 is  8.888889 
+#Starting model with gamma:  1 Error for  1 is  8.888889 
+#Starting model with gamma:  2 Error for  2 is  8.939394 
+#Starting model with gamma:  4 Error for  4 is  8.939394 
+#Starting model with gamma:  8 Error for  8 is  8.939394 
+#Starting model with gamma:  16 Error for  16 is  8.939394
+
+#Mismo que el cost 100 haya sido lo mejor, la combinación con gamma no ha sido buena. Creemos que no era la mejor manera de jugar con los parametros, pues entendemos que cost y gamma deben ser combinados conjuntamente para la otimización
+start.time <- Sys.time()
+tune.out <- tune(svm,class~., data = train_musk, type = "C-classification", kernel = "radial",ranges=list(cost=c(0.001, 0.01, 1, 1.5, 5, 10, 100),gamma=c(0.125, 0.25,0.5,1,2,4,8)))
+(end.time <- Sys.time() - start.time)
+
+bestmodel.radial <- tune.out$best.model
+summary(bestmodel.radial)
+
+pred <- predict(bestmodel.radial, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+(error <- (1-sum(diag(cm))/sum(cm))*100) #Error
+#
+start.time <- Sys.time()
+tune.out <- tune(svm,class~., data = train_musk, type = "C-classification", kernel = "radial",ranges=list(cost=1,gamma=2))
+(end.time <- Sys.time() - start.time)
+
+bestmodel.radial1 <- tune.out$best.model
+summary(tune.out)
+
+pred <- predict(bestmodel.radial1, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+error <- (1-sum(diag(cm))/sum(cm))*100 #Error
+
+#
+start.time <- Sys.time()
+tune.out <- tune(svm,class~., data = train_musk, type = 'C-classification', kernel = 'radial',ranges=list(cost=0.1,gamma=0.25))
+(end.time <- Sys.time() - start.time)
+
+bestmodel.radial2 <- tune.out$best.model
+summary(tune.out)
+
+pred <- predict(bestmodel.radial2, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+error <- (1-sum(diag(cm))/sum(cm))*100
+
+#
+start.time <- Sys.time()
+tune.out.radial3 <- svm(class~., data = train_musk, type = 'C-classification', kernel = 'radial',cost=0.1,gamma=0.125)
+(end.time <- Sys.time() - start.time)
+
+pred <- predict(tune.out.radial3, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+(error <- (1-sum(diag(cm))/sum(cm))*100)
+#
+start.time <- Sys.time()
+tune.out.radial4 <- tune(svm,class~., data = train_musk, type = 'C-classification', kernel = 'radial',ranges=list(cost=0.1,gamma=0.125))
+(end.time <- Sys.time() - start.time)
+
+pred <- predict(tune.out.radial4$best.model, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+(error <- (1-sum(diag(cm))/sum(cm))*100)
+```
+
+## SVM con Polynomial Kernel (Cost + Degree + Coef0)
+```{r}
+#It appears that the degree parameter controls the flexibility of the decision boundary. Higher degree kernels yield a more flexible decision boundary.
+#degree: parameter needed for kernel of type polynomial (default: 3) - probar con 1, 2, 3 y 5
+#coef0: parameter needed for kernels of type polynomial and sigmoid (default: 0)
+start.time <- Sys.time()
+tune.out.poly3 <- tune(svm,class~., data = train_musk, type = "C-classification", kernel = "polynomial",ranges=list(cost=c(0.001, 0.01, 1, 1.5, 5, 10, 100)),degree = 3, coef0=1)
+(end.time <- Sys.time() - start.time)
+
+(bestmodel.poly3 <- tune.out.poly3$best.model)
+
+pred <- predict(bestmodel.poly3, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+(error <- (1-sum(diag(cm))/sum(cm))*100) #Error 
+#
+start.time <- Sys.time()
+tune.out.poly4 <- tune(svm,class~., data = train_musk, type = "C-classification", kernel = "polynomial",ranges=list(cost=c(0.001, 0.01, 1, 1.5, 5, 10, 100)),degree = 4, coef0=1)
+(end.time <- Sys.time() - start.time)
+
+(bestmodel.poly4 <- tune.out.poly4$best.model)
+
+pred <- predict(bestmodel.poly4, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+(error <- (1-sum(diag(cm))/sum(cm))*100) #Error 
+
+#
+start.time <- Sys.time()
+tune.out.poly5 <- tune(svm,class~., data = train_musk, type = "C-classification", kernel = "polynomial",ranges=list(cost=c(0.001, 0.01, 1, 1.5, 5, 10, 100)),degree = 5, coef0=1)
+(end.time <- Sys.time() - start.time)
+
+(bestmodel.poly5 <- tune.out.poly5$best.model)
+
+pred <- predict(bestmodel.poly5, newdata = test_musk,type="class", decision.values = TRUE)
+cm <- table(Truth=test_musk$class, Pred=pred)
+(error <- (1-sum(diag(cm))/sum(cm))*100) #Error
+```
+
+## ROC
+```{r}
+#ROC Curve para el mejor Linear Kernel
+
+#ROC Curve para el mejor Radial Kernel
+
+#ROC Curve para el mejor Polynomial Kernel
+
+```
