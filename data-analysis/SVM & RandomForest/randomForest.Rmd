@@ -1,0 +1,291 @@
+---
+title: "Random Forest"
+author: "Lais Silva Almeida Zanchetta, Daniel Ferreira Zanchetta"
+date: "5/2/2020"
+output: html_document
+---
+
+# Ramdon Forest - Pre-proceso sin PCA:
+```{r}
+#Pre-proceso
+library(dplyr)
+library(tidyr)
+library(caret)
+
+#Leemos el fichero y eliminamos las dos primeras variables, siguiendo las recomendaciones en el Musk2.info
+musk <- read.table(file="C:/Users/Daniel/Documents/Certificados & Faculdade/UPC Master Big Data/Data Analytics/Mathematical Foundations/Random Forest/Musk/Musk2.data",sep = ",") %>% select(-c(V1,V2))
+
+musk <- read.table(file.choose(),sep = ",") %>% select(-c(V1,V2))
+
+colnames(musk) <- c(paste0("f",1:166), 'class')
+
+#Pasamos la variable class a factor
+musk$class <- as.factor(musk$class)
+
+#Normalizamos las variables numericas utilizando el metodo scale y center
+musk <- musk %>% mutate_if(is.numeric, scale, center = T, scale = T)
+
+
+set.seed(7)
+#Separamos Musk en Data Frame de training y testing, siendo que training contiene 70% de los registros
+#Intentamos con el createDataPartition del caret pero no nos ha servido pues no genera muestras aleatorias
+#tran_sample <- createDataPartition(y = musk$class, p= 0.7, list = FALSE)
+tran_sample <- sample(seq_len(nrow(musk)), size = nrow(musk) * 0.7)
+train_musk   <- musk[tran_sample, ] 
+test_musk    <- musk[-tran_sample, ] 
+
+# Aplicando Random Forest
+
+library(randomForest)
+
+```
+# Random Forest con 100 arboles - Error real 2.53%
+```{r}
+# Random Forest con 100 arboles para crecer
+musk.randomfor1 <- randomForest(class ~., data = train_musk, ntree = 100)
+
+# Error estimado - OOB estimate of error rate: 2.43%
+musk.randomfor1
+
+# Error real - 2.52%
+pred_randomfor1 <- predict(musk.randomfor1, newdata=test_musk)
+
+confusion.matrix.rf <- table(test_musk$class, pred_randomfor1)
+
+confusion.matrix.rf
+
+(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf))*100
+
+# Porcentaje por clase en la matriz de confusión resultante
+prop.table(confusion.matrix.rf, 1)
+
+# Porcentaje total de predicciones correctas - 97.47%
+sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)
+
+# Error de teste real - 2,53%
+round(100*(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)),2)
+
+# Plot error rate en funcción del numero de arboles utilizados: 
+# Negro = out of bag (OOB)
+# Rojo = label 1 ('Musk')
+# Verde  = label 2 ('NonMusk')
+plot(musk.randomfor1, main = "Random Forest: Modelo 1, ntree=100")
+
+legend("topright", legend=c("OOB", "Musk", "NonMusk"),    
+       pch=c(1,1), col=c("black","red","green"))
+
+# Cuales son las variables utilizadas en la forest y cuantas veces son utilizadas las variables en la predicción
+varUsed(musk.randomfor1, by.tree=FALSE, count = TRUE)
+```
+# Random Forest con 200 arboles - Tiene un error de teste mas grande que con 100 arboles - Error real 2.63%
+```{r}
+# Random Forest con 200 arboles para crecer
+musk.randomfor2 <- randomForest(class ~., data = train_musk, ntree = 200)
+
+# Error estimado - OOB estimate of error rate: 2.58%
+musk.randomfor2
+
+# Error real - 2.62%
+pred_randomfor2 <- predict(musk.randomfor2, newdata=test_musk)
+
+confusion.matrix.rf <- table(test_musk$class, pred_randomfor2)
+
+confusion.matrix.rf
+
+(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf))*100
+
+# Porcentaje por clase en la matriz de confusión resultante
+prop.table(confusion.matrix.rf, 1)
+
+# Porcentaje total de predicciones correctas - 97.37%
+sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)
+
+# Error de teste real - 2,63%
+round(100*(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)),2)
+
+# Plot error rate en funcción del numero de arboles utilizados: 
+# Negro = out of bag (OOB)
+# Rojo = label 1 ('Musk')
+# Verde  = label 2 ('NonMusk')
+plot(musk.randomfor2, main = "Random Forest: Modelo 2, ntree=200")
+
+legend("topright", legend=c("OOB", "Musk", "NonMusk"),    
+       pch=c(1,1), col=c("black","red","green"))
+
+# Cuales son las variables utilizadas en la forest y cuantas veces son utilizadas las variables en la predicción
+varUsed(musk.randomfor2, by.tree=FALSE, count = TRUE)
+```
+# Random Forest con upsample de la clase menos representada (Musk) - ntree = 100 
+```{r}
+# Musk upsample con 100 arboles
+(muestra.musk <- table(train_musk$class)["1"])
+(muestra.nomusk <- table(train_musk$class)["0"])
+
+set.seed(7)
+musk.randomfor3 <- randomForest(class ~ ., data=train_musk, ntree=100, proximity=FALSE, 
+                          sampsize=c("1"=735, "0"=650), strata=train_musk$class)
+
+# Error estimado - OOB estimate of error rate: 4.96%
+musk.randomfor3
+
+# Error real - 4.69%
+pred_randomfor3 <- predict(musk.randomfor3, test_musk, type="class")
+
+confusion.matrix.rf <- table(test_musk$class, pred_randomfor3)
+
+confusion.matrix.rf
+
+(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf))*100
+
+# Porcentaje por clase en la matriz de confusión resultante
+prop.table(confusion.matrix.rf, 1)
+
+# Porcentaje total de predicciones correctas - 98.78%
+sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)
+
+# Error de teste real - 4.70%
+round(100*(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)),2)
+
+# Plot error rate en funcción del numero de arboles utilizados: 
+# Negro = out of bag (OOB)
+# Rojo = label 1 ('Musk')
+# Verde  = label 2 ('NonMusk')
+plot(musk.randomfor3, main = "Modelo 3 Random Forest")
+
+legend("topright", legend=c("OOB", "Musk", "NonMusk"),    
+       pch=c(1,1), col=c("black","red","green"))
+
+# Cuales son las variables utilizadas en la forest y cuantas veces son utilizadas las variables en la predicción
+varUsed(musk.randomfor3, by.tree=FALSE, count = TRUE)
+```
+# Random Forest con upsample de la clase menos representada (Musk) - ntree = 250 
+```{r}
+# Musk upsample con 250 arboles
+(muestra.musk <- table(train_musk$class)["1"])
+(muestra.nomusk <- table(train_musk$class)["0"])
+
+set.seed(7)
+musk.randomfor4 <- randomForest(class ~ ., data=train_musk, ntree=250, proximity=FALSE, 
+                          sampsize=c("1"=735, "0"=650), strata=train_musk$class)
+
+# Error estimado - OOB estimate of error rate: 4.35%
+musk.randomfor4
+
+# Error real - 4.34%
+pred_randomfor4 <- predict(musk.randomfor4, test_musk, type="class")
+
+confusion.matrix.rf <- table(test_musk$class, pred_randomfor4)
+
+confusion.matrix.rf
+
+(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf))*100
+
+# Porcentaje por clase en la matriz de confusión resultante
+prop.table(confusion.matrix.rf, 1)
+
+# Porcentaje total de predicciones correctas - 94.89%
+sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)
+
+# Error de teste real - 4,34%
+round(100*(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)),2)
+
+# Plot error rate en funcción del numero de arboles utilizados: 
+# Negro = out of bag (OOB)
+# Rojo = label 1 ('Musk')
+# Verde  = label 2 ('NonMusk')
+plot(musk.randomfor4, main = "Random Forest: Modelo 4, upsample de musk con ntree=300")
+
+legend("topright", legend=c("OOB", "Musk", "NonMusk"),    
+       pch=c(1,1), col=c("black","red","green"))
+
+# Cuales son las variables utilizadas en la forest y cuantas veces son utilizadas las variables en la predicción
+varUsed(musk.randomfor4, by.tree=FALSE, count = TRUE)
+varImpPlot(musk.randomfor4)
+```
+# Optimización del Random Forest guiada pelo OOB - Error real 3.89%
+```{r}
+# Optimización de la cantidad de arboles guiada por el OOB
+(ntrees <- round(10^seq(1,3,by=0.4)))
+
+# Estructura para almacenar los resultados parciales 
+randomfor.results <- matrix (rep(0,2*length(ntrees)),nrow=length(ntrees))
+colnames (randomfor.results) <- c("ntrees", "OOB")
+randomfor.results[,"ntrees"] <- ntrees
+randomfor.results[,"OOB"] <- 0
+
+ii <- 1
+
+for (nt in ntrees)
+{ 
+  print(nt)
+  
+  musk.randomfor5 <- randomForest(class ~ ., data=train_musk, ntree=nt, proximity=FALSE, 
+                          sampsize=c("1"=735, "0"=650), strata=train_musk$class)
+  
+  # get the OOB
+  randomfor.results[ii,"OOB"] <- musk.randomfor5$err.rate[nt,1]
+  
+  ii <- ii+1
+}
+
+randomfor.results
+
+# Plot error rate en funcción del numero de arboles utilizados: 
+# Negro = out of bag (OOB)
+# Rojo = label 1 ('Musk')
+# Verde  = label 2 ('NonMusk')
+plot(musk.randomfor5, main = "Modelo 5 Random Forest")
+
+legend("topright", legend=c("OOB", "Musk", "NonMusk"),    
+       pch=c(1,1), col=c("black","red","green"))
+
+# Cuales son las variables utilizadas en la forest y cuantas veces son utilizadas las variables en la predicción
+varUsed(musk.randomfor5, by.tree=FALSE, count = TRUE)
+
+# Encontrando el ntree que genera la tasa de error estimada más baja - ntree=398
+
+lowest.OOB.error <- as.integer(which.min(randomfor.results[,"OOB"]))
+(ntrees.bestresult <- randomfor.results[lowest.OOB.error,"ntrees"])
+
+## Now refit the RF with the best value of 'ntrees'
+
+musk.randomfor6 <- randomForest(class ~ ., data=train_musk, ntree=ntrees.bestresult, proximity=FALSE, 
+                         sampsize=c("1"=735, "0"=650), strata=train_musk$class)
+
+# Error estimado - OOB estimate of error rate: 4.66%
+musk.randomfor6
+
+# Error real - 4.54%
+pred_randomfor6 <- predict(musk.randomfor6, test_musk, type="class")
+
+confusion.matrix.rf <- table(test_musk$class, pred_randomfor6)
+
+confusion.matrix.rf
+
+(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf))*100
+
+# Porcentaje por clase en la matriz de confusión resultante
+prop.table(confusion.matrix.rf, 1)
+
+# Porcentaje total de predicciones correctas - 96.11%
+sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)
+
+# Error de teste real - 3,89%
+round(100*(1-sum(diag(confusion.matrix.rf))/sum(confusion.matrix.rf)),2)
+
+# Importancia de las variables: observamos que, en este caso, las variables que más influyen en este modelo son f36, f163, f126 y f95
+importance(musk.randomfor6)
+varImpPlot(musk.randomfor6)
+
+# Plot error rate en funcción del numero de arboles utilizados: 
+# Negro = out of bag (OOB)
+# Rojo = label 1 ('Musk')
+# Verde  = label 2 ('NonMusk')
+plot(musk.randomfor6, main = "Modelo 6 RF")
+
+legend("topright", legend=c("OOB", "Musk", "NonMusk"),    
+       pch=c(1,1), col=c("black","red","green"))
+
+# Cuales son las variables utilizadas en la forest y cuantas veces son utilizadas las variables en la predicción
+varUsed(musk.randomfor6, by.tree=FALSE, count = TRUE)
+```
